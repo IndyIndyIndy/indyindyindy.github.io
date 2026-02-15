@@ -31,6 +31,164 @@
 
   const TEST_SCENARIOS = [
     {
+      id: 'move_hauptmann_diagonal',
+      name: 'Bewegung: Hauptmann diagonal',
+      description: 'Hauptmann zieht 1 Feld diagonal und bleibt verbunden.',
+      setup: {
+        activePlayer: WHITE,
+        pieces: [
+          { square: 'c3', player: WHITE, type: 'H' },
+          { square: 'c4', player: WHITE, type: 'W' },
+          { square: 'e5', player: BLACK, type: 'H' },
+          { square: 'f5', player: BLACK, type: 'W' }
+        ]
+      },
+      moves: ['c3-d4', 'e5-e4'],
+      expected: [
+        { type: 'pieceAt', square: 'd4', player: WHITE, piece: 'H' },
+        { type: 'noPieceAt', square: 'c3' },
+        { type: 'activePlayer', player: WHITE }
+      ]
+    },
+    {
+      id: 'move_waechter_back_diagonal',
+      name: 'Bewegung: Waechter rueckwaerts-diagonal',
+      description: 'Waechter nutzt die erlaubte diagonal-rueckwaerts Bewegung.',
+      setup: {
+        activePlayer: WHITE,
+        pieces: [
+          { square: 'c3', player: WHITE, type: 'W' },
+          { square: 'c2', player: WHITE, type: 'H' },
+          { square: 'e5', player: BLACK, type: 'H' },
+          { square: 'f5', player: BLACK, type: 'W' }
+        ]
+      },
+      moves: ['c3-b2', 'e5-e4'],
+      expected: [
+        { type: 'pieceAt', square: 'b2', player: WHITE, piece: 'W' },
+        { type: 'noPieceAt', square: 'c3' },
+        { type: 'activePlayer', player: WHITE }
+      ]
+    },
+    {
+      id: 'move_klinge_forward_diagonal',
+      name: 'Bewegung: Klinge diagonal-vorwaerts',
+      description: 'Klinge zieht diagonal-vorwaerts wie im Regelwerk beschrieben.',
+      setup: {
+        activePlayer: WHITE,
+        pieces: [
+          { square: 'c3', player: WHITE, type: 'K' },
+          { square: 'c4', player: WHITE, type: 'H' },
+          { square: 'e5', player: BLACK, type: 'H' },
+          { square: 'f5', player: BLACK, type: 'W' }
+        ]
+      },
+      moves: ['c3-d4', 'e5-e4'],
+      expected: [
+        { type: 'pieceAt', square: 'd4', player: WHITE, piece: 'K' },
+        { type: 'noPieceAt', square: 'c3' },
+        { type: 'activePlayer', player: WHITE }
+      ]
+    },
+    {
+      id: 'move_springer_jump',
+      name: 'Bewegung: Springer springt ueber Figur',
+      description: 'Springer ueberspringt belegte Felder und landet legal im L-Sprung.',
+      setup: {
+        activePlayer: WHITE,
+        pieces: [
+          { square: 'b2', player: WHITE, type: 'S' },
+          { square: 'b3', player: WHITE, type: 'W' },
+          { square: 'c4', player: WHITE, type: 'H' },
+          { square: 'e5', player: BLACK, type: 'H' },
+          { square: 'f5', player: BLACK, type: 'W' }
+        ]
+      },
+      moves: ['b2-d3', 'e5-e4'],
+      expected: [
+        { type: 'pieceAt', square: 'd3', player: WHITE, piece: 'S' },
+        { type: 'pieceAt', square: 'b3', player: WHITE, piece: 'W' },
+        { type: 'noPieceAt', square: 'b2' }
+      ]
+    },
+    {
+      id: 'move_turm_slide',
+      name: 'Bewegung: Turm gleitet orthogonal',
+      description: 'Turm gleitet mehrere Felder orthogonal auf ein freies Feld.',
+      setup: {
+        activePlayer: WHITE,
+        pieces: [
+          { square: 'a3', player: WHITE, type: 'T' },
+          { square: 'b4', player: WHITE, type: 'H' },
+          { square: 'e5', player: BLACK, type: 'H' },
+          { square: 'f5', player: BLACK, type: 'W' }
+        ]
+      },
+      moves: ['a3-a5', 'e5-e4'],
+      expected: [
+        { type: 'pieceAt', square: 'a5', player: WHITE, piece: 'T' },
+        { type: 'noPieceAt', square: 'a3' }
+      ]
+    },
+    {
+      id: 'move_tuemmler_side_glide',
+      name: 'Bewegung: Tuemmler seitwaerts',
+      description: 'Tuemmler kann seitwaerts beliebig weit gleiten.',
+      setup: {
+        activePlayer: WHITE,
+        pieces: [
+          { square: 'b3', player: WHITE, type: 'P' },
+          { square: 'd4', player: WHITE, type: 'H' },
+          { square: 'e5', player: BLACK, type: 'H' },
+          { square: 'f5', player: BLACK, type: 'W' }
+        ]
+      },
+      moves: ['b3-e3', 'e5-e4'],
+      expected: [
+        { type: 'pieceAt', square: 'e3', player: WHITE, piece: 'P' },
+        { type: 'noPieceAt', square: 'b3' }
+      ]
+    },
+    {
+      id: 'move_orca_diagonal',
+      name: 'Bewegung: Orca diagonal 1 Feld',
+      description: 'Orca kann 1 Feld diagonal ziehen.',
+      setup: {
+        activePlayer: WHITE,
+        pieces: [
+          { square: 'c3', player: WHITE, type: 'O' },
+          { square: 'c4', player: WHITE, type: 'H' },
+          { square: 'e5', player: BLACK, type: 'H' },
+          { square: 'f5', player: BLACK, type: 'W' }
+        ]
+      },
+      moves: ['c3-d4', 'e5-e4'],
+      expected: [
+        { type: 'pieceAt', square: 'd4', player: WHITE, piece: 'O' },
+        { type: 'noPieceAt', square: 'c3' }
+      ]
+    },
+    {
+      id: 'capture_standard',
+      name: 'Schlagen: Standard-Schlag',
+      description: 'Normales Schlagen entfernt die gegnerische Figur ohne Verwandlung.',
+      setup: {
+        activePlayer: WHITE,
+        pieces: [
+          { square: 'c3', player: WHITE, type: 'H' },
+          { square: 'c4', player: WHITE, type: 'W' },
+          { square: 'd4', player: BLACK, type: 'K' },
+          { square: 'e5', player: BLACK, type: 'W' }
+        ]
+      },
+      moves: ['c3xd4', 'e5-d5'],
+      expected: [
+        { type: 'pieceAt', square: 'd4', player: WHITE, piece: 'H' },
+        { type: 'noPieceAt', square: 'c3' },
+        { type: 'capturedCount', player: BLACK, count: 1 }
+      ]
+    },
+    {
       id: 'promotion_orca',
       name: 'Promotion: Tuemmler -> Orca',
       description: 'Prueft, dass ein schlagender Tuemmler sofort zu Orca wird.',
@@ -40,6 +198,89 @@
         { type: 'pieceAt', square: 'b4', player: WHITE, piece: 'O' },
         { type: 'capturedCount', player: BLACK, count: 1 },
         { type: 'activePlayer', player: BLACK }
+      ]
+    },
+    {
+      id: 'isolation_mark_only',
+      name: 'Isolation: Markierung ohne Soforttod',
+      description: 'Neu isolierte Figuren werden zuerst nur angezaehlt.',
+      setup: {
+        activePlayer: WHITE,
+        pieces: [
+          { square: 'c3', player: WHITE, type: 'T' },
+          { square: 'c4', player: WHITE, type: 'W' },
+          { square: 'e5', player: BLACK, type: 'H' },
+          { square: 'f5', player: BLACK, type: 'W' }
+        ]
+      },
+      moves: ['c3-f3', 'e5-e4'],
+      expected: [
+        { type: 'pieceAt', square: 'f3', player: WHITE, piece: 'T' },
+        { type: 'pieceAt', square: 'c4', player: WHITE, piece: 'W' },
+        { type: 'endangeredAt', square: 'f3', value: true },
+        { type: 'endangeredAt', square: 'c4', value: true },
+        { type: 'capturedCount', player: WHITE, count: 0 }
+      ]
+    },
+    {
+      id: 'isolation_rescue_clears',
+      name: 'Isolation: Rettung hebt Angezaehlt auf',
+      description: 'Angezaehlte Figur ueberlebt bei rechtzeitiger Wiederanbindung.',
+      setup: {
+        activePlayer: WHITE,
+        pieces: [
+          { square: 'c3', player: WHITE, type: 'T' },
+          { square: 'c4', player: WHITE, type: 'H' },
+          { square: 'd4', player: WHITE, type: 'W' },
+          { square: 'e5', player: BLACK, type: 'H' },
+          { square: 'f5', player: BLACK, type: 'W' }
+        ]
+      },
+      moves: ['c3-f3', 'e5-e4', 'd4-e3'],
+      expected: [
+        { type: 'pieceAt', square: 'f3', player: WHITE, piece: 'T' },
+        { type: 'notEndangeredAt', square: 'f3' },
+        { type: 'capturedCount', player: WHITE, count: 0 }
+      ]
+    },
+    {
+      id: 'isolation_death_unresolved',
+      name: 'Isolation: Ungerettet stirbt naechsten Eigenzug',
+      description: 'Angezaehlte Figur stirbt, wenn die Formation nicht repariert wird.',
+      setup: {
+        activePlayer: WHITE,
+        pieces: [
+          { square: 'c3', player: WHITE, type: 'T' },
+          { square: 'c4', player: WHITE, type: 'H' },
+          { square: 'd4', player: WHITE, type: 'W' },
+          { square: 'e5', player: BLACK, type: 'H' },
+          { square: 'f5', player: BLACK, type: 'W' }
+        ]
+      },
+      moves: ['c3-f3', 'e5-e4', 'c4-c5'],
+      expected: [
+        { type: 'noPieceAt', square: 'f3' },
+        { type: 'capturedCount', player: WHITE, count: 1 },
+        { type: 'pieceCount', player: WHITE, count: 2 }
+      ]
+    },
+    {
+      id: 'last_man_rule',
+      name: 'Isolation: Letzter Mann Ausnahme',
+      description: 'Eine einzelne verbleibende Figur wird nicht angezaehlt.',
+      setup: {
+        activePlayer: WHITE,
+        pieces: [
+          { square: 'c3', player: WHITE, type: 'H' },
+          { square: 'e5', player: BLACK, type: 'H' },
+          { square: 'f5', player: BLACK, type: 'W' }
+        ]
+      },
+      moves: ['c3-c4', 'e5-e4', 'c4-c5'],
+      expected: [
+        { type: 'pieceAt', square: 'c5', player: WHITE, piece: 'H' },
+        { type: 'notEndangeredAt', square: 'c5' },
+        { type: 'gameOver', value: false }
       ]
     },
     {
@@ -77,6 +318,26 @@
         ]
       },
       moves: ['b2-b3', 'e5-e4', 'b3-b2', 'e4-e5', 'b2-b3', 'e5-e4', 'b3-b2', 'e4-e5'],
+      expected: [
+        { type: 'gameOver', value: true },
+        { type: 'winner', player: 'draw' }
+      ]
+    },
+    {
+      id: 'fifty_move_rule_threshold',
+      name: 'Remis: 50-Zug-Regel Schwelle',
+      description: 'Bei movesWithoutEvent = 99 fuehrt ein ruhiger Zug sofort zum Remis.',
+      setup: {
+        activePlayer: WHITE,
+        movesWithoutEvent: 99,
+        pieces: [
+          { square: 'c3', player: WHITE, type: 'H' },
+          { square: 'c4', player: WHITE, type: 'W' },
+          { square: 'e5', player: BLACK, type: 'H' },
+          { square: 'f5', player: BLACK, type: 'W' }
+        ]
+      },
+      moves: ['c3-d3'],
       expected: [
         { type: 'gameOver', value: true },
         { type: 'winner', player: 'draw' }
@@ -702,16 +963,28 @@
   class TestLabController {
     constructor(app) {
       this.app = app;
-      this.scenarios = TEST_SCENARIOS;
+      this.scenarios = TEST_SCENARIOS.map(scenario => ({ ...scenario, chapter: this._chapterForScenario(scenario) }));
       this.enabled = !!document.getElementById('test-lab');
+      this.chapterOrder = ['§6 Bewegung', '§7 Schlagen', '§8 Isolation', '§9 Verwandlung', '§10 Remis', 'Sonstiges'];
       this.state = {
         scenarioId: null,
         initialSetup: null,
         moveTokens: [],
         cursor: 0,
         snapshots: [],
-        errors: []
+        errors: [],
+        suiteResults: {}
       };
+    }
+
+    _chapterForScenario(scenario) {
+      const id = scenario.id || '';
+      if (id.startsWith('move_')) return '§6 Bewegung';
+      if (id === 'capture_standard') return '§7 Schlagen';
+      if (id.includes('isolation') || id === 'last_man_rule') return '§8 Isolation';
+      if (id.includes('promotion')) return '§9 Verwandlung';
+      if (id.includes('repetition') || id.includes('fifty_move')) return '§10 Remis';
+      return 'Sonstiges';
     }
 
     init() {
@@ -723,11 +996,13 @@
         moves: document.getElementById('test-moves'),
         status: document.getElementById('test-status'),
         assertions: document.getElementById('test-assertions'),
+        summary: document.getElementById('test-summary'),
         btnLoad: document.getElementById('btn-test-load'),
         btnReset: document.getElementById('btn-test-reset'),
         btnPrev: document.getElementById('btn-test-prev'),
         btnNext: document.getElementById('btn-test-next'),
         btnRun: document.getElementById('btn-test-run'),
+        btnSuite: document.getElementById('btn-test-suite'),
         btnStop: document.getElementById('btn-test-stop')
       };
 
@@ -740,16 +1015,27 @@
       this.els.btnPrev.addEventListener('click', () => this.stepBack());
       this.els.btnNext.addEventListener('click', () => this.stepForward());
       this.els.btnRun.addEventListener('click', () => this.runAll());
+      if (this.els.btnSuite) this.els.btnSuite.addEventListener('click', () => this.runSuite());
       this.els.btnStop.addEventListener('click', () => this.exitTestMode());
     }
 
     _populateScenarioSelect() {
       this.els.scenario.innerHTML = '';
-      for (const scenario of this.scenarios) {
-        const option = document.createElement('option');
-        option.value = scenario.id;
-        option.textContent = scenario.name;
-        this.els.scenario.appendChild(option);
+      for (const chapter of this.chapterOrder) {
+        const chapterScenarios = this.scenarios.filter(scenario => scenario.chapter === chapter);
+        if (chapterScenarios.length === 0) continue;
+
+        const group = document.createElement('optgroup');
+        group.label = chapter;
+
+        for (const scenario of chapterScenarios) {
+          const option = document.createElement('option');
+          option.value = scenario.id;
+          option.textContent = scenario.name;
+          group.appendChild(option);
+        }
+
+        this.els.scenario.appendChild(group);
       }
     }
 
@@ -784,15 +1070,29 @@
       return { from, to };
     }
 
-    _applyScenarioSetup(scenario) {
+    _applyScenarioSetupToGame(game, scenario) {
       if (scenario.setup && scenario.setup.preset === 'default') {
-        this.app.game.reset();
+        game.reset();
         return;
       }
 
       const pieces = scenario.setup && Array.isArray(scenario.setup.pieces) ? scenario.setup.pieces : [];
       const activePlayer = scenario.setup && scenario.setup.activePlayer ? scenario.setup.activePlayer : WHITE;
-      this.app.game.loadPosition(pieces, activePlayer);
+      game.loadPosition(pieces, activePlayer);
+
+      if (scenario.setup && Number.isInteger(scenario.setup.movesWithoutEvent)) {
+        game.movesWithoutEvent = scenario.setup.movesWithoutEvent;
+      }
+      if (scenario.setup && Number.isInteger(scenario.setup.moveCount)) {
+        game.moveCount = scenario.setup.moveCount;
+      }
+      if (scenario.setup && Array.isArray(scenario.setup.positionHistory)) {
+        game.positionHistory = [...scenario.setup.positionHistory];
+      }
+    }
+
+    _applyScenarioSetup(scenario) {
+      this._applyScenarioSetupToGame(this.app.game, scenario);
     }
 
     loadSelectedScenario() {
@@ -814,6 +1114,7 @@
       this.state.cursor = 0;
       this.state.snapshots = [deepClone(this.state.initialSetup)];
       this.state.errors = [];
+      this.state.suiteResults[scenario.id] = null;
 
       this.app.renderAll();
       this.render();
@@ -831,6 +1132,7 @@
       this.state.cursor = 0;
       this.state.snapshots = [deepClone(this.state.initialSetup)];
       this.state.errors = [];
+      if (this.state.scenarioId) this.state.suiteResults[this.state.scenarioId] = null;
       this.app.selectedPiece = null;
       this.app.validMoves = [];
 
@@ -856,6 +1158,7 @@
       if (this.state.cursor === 0) return;
 
       this.state.cursor--;
+      if (this.state.scenarioId) this.state.suiteResults[this.state.scenarioId] = null;
       const snapshot = this.state.snapshots[this.state.cursor];
       this.app.game.restoreState(deepClone(snapshot));
       this.app.selectedPiece = null;
@@ -872,6 +1175,7 @@
         if (!this._runSingleStep(false)) break;
       }
 
+      this._finalizeCurrentScenario();
       this.app.renderAll();
       this.render();
     }
@@ -907,6 +1211,7 @@
       this.app.validMoves = [];
 
       if (renderAfter) {
+        this._finalizeCurrentScenario();
         this.app.renderAll();
         this.render();
       }
@@ -914,10 +1219,8 @@
       return true;
     }
 
-    evaluateAssertions() {
-      const scenario = this._scenarioById(this.state.scenarioId);
+    _evaluateScenarioAssertions(scenario, game) {
       if (!scenario) return [];
-
       const results = [];
       for (const expected of scenario.expected || []) {
         let ok = false;
@@ -925,32 +1228,113 @@
 
         if (expected.type === 'pieceAt') {
           const coord = parseCoord(expected.square);
-          const piece = coord ? this.app.game.board[coord.file][coord.rank] : null;
+          const piece = coord ? game.board[coord.file][coord.rank] : null;
           ok = !!piece && piece.player === expected.player && piece.type === expected.piece;
           message = `Figur auf ${expected.square}: erwartet ${expected.player} ${expected.piece}`;
+        } else if (expected.type === 'noPieceAt') {
+          const coord = parseCoord(expected.square);
+          const piece = coord ? game.board[coord.file][coord.rank] : null;
+          ok = !piece;
+          message = `Feld ${expected.square}: erwartet leer`;
+        } else if (expected.type === 'endangeredAt') {
+          const coord = parseCoord(expected.square);
+          const piece = coord ? game.board[coord.file][coord.rank] : null;
+          ok = !!piece && piece.endangered === expected.value;
+          message = `Angezaehlt auf ${expected.square}: erwartet ${expected.value}`;
+        } else if (expected.type === 'notEndangeredAt') {
+          const coord = parseCoord(expected.square);
+          const piece = coord ? game.board[coord.file][coord.rank] : null;
+          ok = !!piece && piece.endangered === false;
+          message = `Angezaehlt auf ${expected.square}: erwartet false`;
         } else if (expected.type === 'capturedCount') {
-          const count = expected.player === WHITE ? this.app.game.capturedWhite.length : this.app.game.capturedBlack.length;
+          const count = expected.player === WHITE ? game.capturedWhite.length : game.capturedBlack.length;
           ok = count === expected.count;
           message = `Verluste ${expected.player}: erwartet ${expected.count}, ist ${count}`;
         } else if (expected.type === 'activePlayer') {
-          ok = this.app.game.activePlayer === expected.player;
-          message = `Aktiver Spieler: erwartet ${expected.player}, ist ${this.app.game.activePlayer}`;
+          ok = game.activePlayer === expected.player;
+          message = `Aktiver Spieler: erwartet ${expected.player}, ist ${game.activePlayer}`;
         } else if (expected.type === 'gameOver') {
-          ok = this.app.game.gameOver === expected.value;
-          message = `GameOver: erwartet ${expected.value}, ist ${this.app.game.gameOver}`;
+          ok = game.gameOver === expected.value;
+          message = `GameOver: erwartet ${expected.value}, ist ${game.gameOver}`;
         } else if (expected.type === 'winner') {
-          ok = this.app.game.winner === expected.player;
-          message = `Gewinner: erwartet ${expected.player}, ist ${this.app.game.winner}`;
+          ok = game.winner === expected.player;
+          message = `Gewinner: erwartet ${expected.player}, ist ${game.winner}`;
         } else if (expected.type === 'pieceCount') {
-          const count = this.app.game.pieces(expected.player).length;
+          const count = game.pieces(expected.player).length;
           ok = count === expected.count;
           message = `Figurenanzahl ${expected.player}: erwartet ${expected.count}, ist ${count}`;
+        } else if (expected.type === 'movesWithoutEvent') {
+          ok = game.movesWithoutEvent === expected.value;
+          message = `movesWithoutEvent: erwartet ${expected.value}, ist ${game.movesWithoutEvent}`;
         }
 
         results.push({ ok, message });
       }
 
       return results;
+    }
+
+    evaluateAssertions() {
+      const scenario = this._scenarioById(this.state.scenarioId);
+      return this._evaluateScenarioAssertions(scenario, this.app.game);
+    }
+
+    _setScenarioResult(scenarioId, errors, assertionResults) {
+      const failures = assertionResults.filter(result => !result.ok).length + errors.length;
+      this.state.suiteResults[scenarioId] = {
+        total: assertionResults.length + errors.length,
+        passed: failures === 0,
+        failures
+      };
+    }
+
+    _finalizeCurrentScenario() {
+      const scenario = this._scenarioById(this.state.scenarioId);
+      if (!scenario) return;
+
+      const isFinished = this.state.cursor === this.state.moveTokens.length || this.app.game.gameOver;
+      if (!isFinished) return;
+
+      const assertions = this.evaluateAssertions();
+      this._setScenarioResult(scenario.id, [...this.state.errors], assertions);
+    }
+
+    runSuite() {
+      if (!this.enabled) return;
+
+      for (const scenario of this.scenarios) {
+        const game = new TethariGame();
+        this._applyScenarioSetupToGame(game, scenario);
+
+        const errors = [];
+        const tokens = this.tokenizeMoves(Array.isArray(scenario.moves) ? scenario.moves.join(' ') : '');
+
+        for (let i = 0; i < tokens.length && !game.gameOver; i++) {
+          const token = tokens[i];
+          const parsed = this.parseMoveToken(token);
+          if (!parsed) {
+            errors.push(`Ungueltiges Zugformat bei Schritt ${i + 1}: ${token}`);
+            break;
+          }
+
+          const legalMove = game
+            .movesFor(parsed.from.file, parsed.from.rank)
+            .find(move => move.to.file === parsed.to.file && move.to.rank === parsed.to.rank);
+
+          if (!legalMove) {
+            const side = game.activePlayer === WHITE ? 'Weiss' : 'Schwarz';
+            errors.push(`Illegaler Zug bei Schritt ${i + 1} (${side}): ${token}`);
+            break;
+          }
+
+          game.executeMove(legalMove);
+        }
+
+        const assertions = this._evaluateScenarioAssertions(scenario, game);
+        this._setScenarioResult(scenario.id, errors, assertions);
+      }
+
+      this.render();
     }
 
     render() {
@@ -963,6 +1347,7 @@
       if (!this.isTestMode()) {
         statusEl.textContent = 'Testmodus inaktiv';
         assertionsEl.innerHTML = '';
+        if (this.els.summary) this.els.summary.innerHTML = '';
         return;
       }
 
@@ -992,6 +1377,41 @@
       }
 
       assertionsEl.innerHTML = lines.join('');
+
+      if (!this.els.summary) return;
+
+      const finished = this.scenarios
+        .map(scenario => this.state.suiteResults[scenario.id])
+        .filter(result => !!result);
+
+      if (finished.length === 0) {
+        this.els.summary.innerHTML = '<div class="summary-hint">Suite noch nicht ausgefuehrt.</div>';
+        return;
+      }
+
+      const passedTotal = finished.filter(result => result.passed).length;
+      const failedTotal = finished.length - passedTotal;
+      const headerCss = failedTotal === 0 ? 'summary-ok' : 'summary-fail';
+      const summaryLines = [
+        `<div class="${headerCss}">Suite: ${passedTotal}/${finished.length} PASS | ${failedTotal} FAIL</div>`
+      ];
+
+      for (const chapter of this.chapterOrder) {
+        const chapterScenarios = this.scenarios.filter(scenario => scenario.chapter === chapter);
+        const chapterResults = chapterScenarios
+          .map(scenario => this.state.suiteResults[scenario.id])
+          .filter(result => !!result);
+        if (chapterResults.length === 0) continue;
+
+        const chapterPass = chapterResults.filter(result => result.passed).length;
+        const chapterFail = chapterResults.length - chapterPass;
+        const chapterCss = chapterFail === 0 ? 'summary-ok' : 'summary-fail';
+        summaryLines.push(
+          `<div class="summary-line"><span>${chapter}</span><span class="${chapterCss}">${chapterPass}/${chapterResults.length} PASS${chapterFail > 0 ? ` | ${chapterFail} FAIL` : ''}</span></div>`
+        );
+      }
+
+      this.els.summary.innerHTML = summaryLines.join('');
     }
   }
 
@@ -1095,7 +1515,9 @@
       }
 
       this.els.helpToggle.addEventListener('click', () => {
-        this.els.helpPanel.classList.toggle('visible');
+        if (!this.els.helpPanel) return;
+        this.els.helpPanel.classList.add('visible');
+        this.els.helpPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     }
 

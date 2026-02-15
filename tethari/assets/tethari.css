@@ -492,6 +492,29 @@ select { padding: 8px 12px; }
   margin-top: 10px;
 }
 
+#test-summary {
+  margin-top: 10px;
+  border: 1px solid #3b3448;
+  background: #100f1c;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.summary-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.summary-hint { color: #8f8578; }
+
+.summary-ok { color: #7ec56a; }
+.summary-fail { color: #d66a5a; }
+
 .assert-ok { color: #7ec56a; }
 .assert-fail { color: #d66a5a; }
 
