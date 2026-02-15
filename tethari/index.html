@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tethari</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background: #0f0e1a;
+            color: #e0d8c8;
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+        }
+
+        #app {
+            max-width: 1180px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        header { text-align: center; }
+
+        header h1 {
+            font-size: 32px;
+            letter-spacing: 12px;
+            color: #c8a86e;
+            text-shadow: 2px 2px 0 #2a1a0a;
+            margin-bottom: 4px;
+        }
+
+        #status {
+            font-size: 16px;
+            min-height: 24px;
+            color: #e8d8b8;
+        }
+
+        #status.thinking {
+            color: #a0a0c0;
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        main {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .sidebar {
+            width: 220px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .captured-area h3 {
+            font-size: 11px;
+            color: #8a7a6a;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .captured-pieces {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            min-height: 36px;
+        }
+
+        .captured-piece {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .captured-piece.white { background: #d8c8a8; color: #3a2518; }
+        .captured-piece.black { background: #3a2818; color: #d8c8a8; border: 1px solid #5a4838; }
+
+        .movement-panel {
+            background: #171526;
+            border: 2px solid #3a2a1c;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .movement-panel h3 {
+            font-size: 11px;
+            color: #8a7a6a;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .move-card-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .move-card {
+            background: #11101c;
+            border: 1px solid #2d2738;
+            border-radius: 6px;
+            padding: 6px 8px;
+        }
+
+        .move-head {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            margin-bottom: 4px;
+        }
+
+        .move-code {
+            color: #c8a86e;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .move-name {
+            color: #b0a090;
+            font-size: 11px;
+        }
+
+        .move-body {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .move-desc {
+            font-size: 10px;
+            color: #938575;
+            line-height: 1.4;
+        }
+
+        .move-svg {
+            width: 58px;
+            height: 58px;
+            flex: 0 0 auto;
+        }
+
+        .move-svg .grid {
+            stroke: #2f2b38;
+            stroke-width: 1;
+        }
+
+        .move-svg .center {
+            fill: #c8a86e;
+            stroke: #f1d9a8;
+            stroke-width: 1;
+        }
+
+        .move-svg .path {
+            stroke: #77b85a;
+            stroke-width: 2;
+            fill: none;
+            stroke-linecap: round;
+        }
+
+        .move-svg .jump {
+            fill: #77b85a;
+        }
+
+        .move-hint {
+            margin-top: 8px;
+            font-size: 10px;
+            color: #7d7264;
+        }
+
+        #move-log h3 {
+            font-size: 11px;
+            color: #8a7a6a;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        #move-list {
+            font-size: 11px;
+            color: #a09888;
+            max-height: 280px;
+            overflow-y: auto;
+            line-height: 1.6;
+        }
+
+        #move-list .move-num { color: #6a5a4a; }
+        #move-list .capture { color: #c87050; }
+        #move-list .death { color: #c85050; }
+        #move-list .promotion { color: #c8a040; }
+        #move-list .endangered { color: #c89050; }
+
+        #board-wrapper { position: relative; }
+
+        .rank-labels {
+            position: absolute;
+            left: -22px;
+            top: 0;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .rank-label {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #5a4a3a;
+        }
+
+        .file-labels {
+            display: flex;
+            margin-top: 4px;
+        }
+
+        .file-label {
+            flex: 1;
+            text-align: center;
+            font-size: 12px;
+            color: #5a4a3a;
+        }
+
+        #board {
+            display: grid;
+            grid-template-columns: repeat(6, 72px);
+            grid-template-rows: repeat(6, 72px);
+            border: 3px solid #4a3828;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5), inset 0 0 10px rgba(0,0,0,0.3);
+        }
+
+        .cell {
+            width: 72px;
+            height: 72px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            transition: background-color 0.15s;
+        }
+
+        .cell.light { background: #c8b898; }
+        .cell.dark { background: #a89070; }
+        .cell.selected { background: #8ab848 !important; }
+
+        .cell.valid-move::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: rgba(100, 180, 60, 0.5);
+            pointer-events: none;
+        }
+
+        .cell.valid-capture { background: rgba(200, 80, 60, 0.25) !important; }
+        .cell.valid-capture::after {
+            content: '';
+            position: absolute;
+            inset: 4px;
+            border-radius: 50%;
+            border: 3px solid rgba(200, 80, 60, 0.6);
+            pointer-events: none;
+        }
+
+        .cell.last-from { background: rgba(180, 160, 80, 0.3) !important; }
+        .cell.last-to { background: rgba(180, 160, 80, 0.4) !important; }
+
+        .cell.death-flash { animation: deathFlash 0.6s ease-out; }
+        @keyframes deathFlash {
+            0% { background: #c83030; }
+            100% { background: inherit; }
+        }
+
+        .piece {
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            user-select: none;
+            transition: transform 0.1s, box-shadow 0.3s, border 0.3s;
+            position: relative;
+            z-index: 1;
+        }
+
+        .piece:hover { transform: scale(1.08); }
+
+        .piece.white {
+            background: linear-gradient(135deg, #f0e0c8, #d8c8a8);
+            color: #3a2518;
+            border: 2px solid #b8a888;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.3);
+        }
+
+        .piece.black {
+            background: linear-gradient(135deg, #4a3828, #2a180a);
+            color: #e0d0b8;
+            border: 2px solid #5a4838;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+        }
+
+        /* Endangered / "angezaehlt" pieces */
+        .piece.endangered {
+            border: 3px dashed #d04040 !important;
+            animation: endangeredPulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes endangeredPulse {
+            0%, 100% { box-shadow: 0 0 6px rgba(208, 64, 64, 0.3), 0 2px 4px rgba(0,0,0,0.3); }
+            50% { box-shadow: 0 0 14px rgba(208, 64, 64, 0.7), 0 2px 4px rgba(0,0,0,0.3); }
+        }
+
+        .piece .sub {
+            position: absolute;
+            bottom: 2px;
+            font-size: 7px;
+            opacity: 0.6;
+            letter-spacing: 0.5px;
+        }
+
+        footer {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        button, select {
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            padding: 8px 16px;
+            border: 2px solid #4a3828;
+            background: #1a1828;
+            color: #c8b898;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background 0.15s;
+        }
+
+        button:hover, select:hover { background: #2a2838; }
+        select { padding: 8px 12px; }
+        #help-toggle { font-size: 11px; padding: 6px 12px; opacity: 0.7; }
+
+        #help-panel {
+            background: #1a1828;
+            border: 2px solid #3a2818;
+            border-radius: 6px;
+            padding: 20px;
+            max-width: 720px;
+            width: 100%;
+            font-size: 12px;
+            line-height: 1.7;
+            display: none;
+        }
+
+        #help-panel.visible { display: block; }
+
+        #help-panel h3 {
+            color: #c8a86e;
+            font-size: 14px;
+            margin: 12px 0 6px 0;
+        }
+
+        #help-panel h3:first-child { margin-top: 0; }
+
+        .piece-help {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .piece-info {
+            background: #12101e;
+            border: 1px solid #2a2838;
+            border-radius: 4px;
+            padding: 10px;
+            width: 210px;
+        }
+
+        .piece-info .name { color: #c8a86e; font-weight: bold; }
+        .piece-info .desc { color: #a09888; font-size: 11px; }
+
+        #game-over-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #game-over-overlay.visible { display: flex; }
+
+        #game-over-box {
+            background: #1a1828;
+            border: 3px solid #c8a86e;
+            border-radius: 8px;
+            padding: 32px 48px;
+            text-align: center;
+        }
+
+        #game-over-box h2 {
+            color: #c8a86e;
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        #game-over-box p {
+            margin-bottom: 20px;
+            color: #a09888;
+        }
+
+        #game-over-box button { font-size: 15px; padding: 10px 24px; }
+
+        @media (max-width: 1080px) {
+            main {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .sidebar {
+                width: min(440px, 100%);
+            }
+        }
+
+        @media (max-width: 760px) {
+            #board {
+                grid-template-columns: repeat(6, 56px);
+                grid-template-rows: repeat(6, 56px);
+            }
+            .cell {
+                width: 56px;
+                height: 56px;
+            }
+            .piece {
+                width: 42px;
+                height: 42px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <header>
+        <h1>TETHARI</h1>
+        <div id="status">Dein Zug (Weiss)</div>
+    </header>
+
+    <main>
+        <div class="sidebar">
+            <div class="captured-area">
+                <h3>Verluste Schwarz</h3>
+                <div class="captured-pieces" id="black-captured"></div>
+            </div>
+            <div id="move-log">
+                <h3>Partieverlauf</h3>
+                <div id="move-list"></div>
+            </div>
+        </div>
+
+        <div id="board-wrapper">
+            <div class="rank-labels" id="rank-labels"></div>
+            <div id="board"></div>
+            <div class="file-labels" id="file-labels"></div>
+        </div>
+
+        <div class="sidebar">
+            <div class="captured-area">
+                <h3>Verluste Weiss</h3>
+                <div class="captured-pieces" id="white-captured"></div>
+            </div>
+            <div class="movement-panel">
+                <h3>Bewegungsgrafik</h3>
+                <div class="move-card-list">
+                    <div class="move-card">
+                        <div class="move-head"><span class="move-code">H</span><span class="move-name">Hauptmann</span></div>
+                        <div class="move-body">
+                            <svg class="move-svg" viewBox="0 0 60 60" aria-hidden="true">
+                                <path class="grid" d="M10 10H50M10 20H50M10 30H50M10 40H50M10 50H50M10 10V50M20 10V50M30 10V50M40 10V50M50 10V50"/>
+                                <path class="path" d="M30 30L30 12M30 30L30 48M30 30L12 30M30 30L48 30M30 30L16 16M30 30L44 16M30 30L16 44M30 30L44 44"/>
+                                <circle class="center" cx="30" cy="30" r="4"/>
+                            </svg>
+                            <div class="move-desc">1 Feld in alle 8 Richtungen</div>
+                        </div>
+                    </div>
+                    <div class="move-card">
+                        <div class="move-head"><span class="move-code">W</span><span class="move-name">Waechter</span></div>
+                        <div class="move-body">
+                            <svg class="move-svg" viewBox="0 0 60 60" aria-hidden="true">
+                                <path class="grid" d="M10 10H50M10 20H50M10 30H50M10 40H50M10 50H50M10 10V50M20 10V50M30 10V50M40 10V50M50 10V50"/>
+                                <path class="path" d="M30 30L30 12M30 30L12 30M30 30L48 30M30 30L30 48M30 30L16 16M30 30L44 16"/>
+                                <circle class="center" cx="30" cy="30" r="4"/>
+                            </svg>
+                            <div class="move-desc">6 Richtungen, keine diagonale Rueckwaertsbewegung</div>
+                        </div>
+                    </div>
+                    <div class="move-card">
+                        <div class="move-head"><span class="move-code">K</span><span class="move-name">Klinge</span></div>
+                        <div class="move-body">
+                            <svg class="move-svg" viewBox="0 0 60 60" aria-hidden="true">
+                                <path class="grid" d="M10 10H50M10 20H50M10 30H50M10 40H50M10 50H50M10 10V50M20 10V50M30 10V50M40 10V50M50 10V50"/>
+                                <path class="path" d="M30 30L30 12M30 30L16 16M30 30L44 16M30 30L16 44M30 30L44 44"/>
+                                <circle class="center" cx="30" cy="30" r="4"/>
+                            </svg>
+                            <div class="move-desc">Vorwaerts + alle diagonalen Einzelschritte</div>
+                        </div>
+                    </div>
+                    <div class="move-card">
+                        <div class="move-head"><span class="move-code">S</span><span class="move-name">Springer</span></div>
+                        <div class="move-body">
+                            <svg class="move-svg" viewBox="0 0 60 60" aria-hidden="true">
+                                <path class="grid" d="M10 10H50M10 20H50M10 30H50M10 40H50M10 50H50M10 10V50M20 10V50M30 10V50M40 10V50M50 10V50"/>
+                                <circle class="jump" cx="20" cy="10" r="3"/><circle class="jump" cx="40" cy="10" r="3"/>
+                                <circle class="jump" cx="10" cy="20" r="3"/><circle class="jump" cx="50" cy="20" r="3"/>
+                                <circle class="jump" cx="10" cy="40" r="3"/><circle class="jump" cx="50" cy="40" r="3"/>
+                                <circle class="jump" cx="20" cy="50" r="3"/><circle class="jump" cx="40" cy="50" r="3"/>
+                                <circle class="center" cx="30" cy="30" r="4"/>
+                            </svg>
+                            <div class="move-desc">L-Sprung, kann Figuren ueberspringen</div>
+                        </div>
+                    </div>
+                    <div class="move-card">
+                        <div class="move-head"><span class="move-code">T</span><span class="move-name">Turm</span></div>
+                        <div class="move-body">
+                            <svg class="move-svg" viewBox="0 0 60 60" aria-hidden="true">
+                                <path class="grid" d="M10 10H50M10 20H50M10 30H50M10 40H50M10 50H50M10 10V50M20 10V50M30 10V50M40 10V50M50 10V50"/>
+                                <path class="path" d="M30 30L30 10M30 30L30 50M30 30L10 30M30 30L50 30"/>
+                                <circle class="center" cx="30" cy="30" r="4"/>
+                            </svg>
+                            <div class="move-desc">Beliebig weit orthogonal</div>
+                        </div>
+                    </div>
+                    <div class="move-card">
+                        <div class="move-head"><span class="move-code">P</span><span class="move-name">Tuemmler</span></div>
+                        <div class="move-body">
+                            <svg class="move-svg" viewBox="0 0 60 60" aria-hidden="true">
+                                <path class="grid" d="M10 10H50M10 20H50M10 30H50M10 40H50M10 50H50M10 10V50M20 10V50M30 10V50M40 10V50M50 10V50"/>
+                                <path class="path" d="M30 30L30 10M30 30L10 30M30 30L50 30"/>
+                                <circle class="center" cx="30" cy="30" r="4"/>
+                            </svg>
+                            <div class="move-desc">1 Feld vorwaerts oder seitwaerts gleiten</div>
+                        </div>
+                    </div>
+                    <div class="move-card">
+                        <div class="move-head"><span class="move-code">O</span><span class="move-name">Orca</span></div>
+                        <div class="move-body">
+                            <svg class="move-svg" viewBox="0 0 60 60" aria-hidden="true">
+                                <path class="grid" d="M10 10H50M10 20H50M10 30H50M10 40H50M10 50H50M10 10V50M20 10V50M30 10V50M40 10V50M50 10V50"/>
+                                <path class="path" d="M30 30L30 10M30 30L30 50M30 30L10 30M30 30L50 30M30 30L20 20M30 30L40 20M30 30L20 40M30 30L40 40"/>
+                                <circle class="center" cx="30" cy="30" r="4"/>
+                            </svg>
+                            <div class="move-desc">Orthogonal weit + diagonal 1 Feld</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="move-hint">Grafik aus Weiss-Perspektive. Bei Schwarz ist vorwaerts gespiegelt.</div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <button id="btn-new">Neues Spiel</button>
+        <select id="difficulty" title="KI-Staerke">
+            <option value="2">Leicht</option>
+            <option value="3" selected>Mittel</option>
+            <option value="4">Schwer</option>
+        </select>
+        <button id="help-toggle">Regeln</button>
+    </footer>
+
+    <div id="help-panel">
+        <h3>Ziel</h3>
+        <p>Eliminiere alle gegnerischen Figuren. Es gibt keinen Koenig &mdash; jede Figur zaehlt.</p>
+
+        <h3>Die Isolationsregel</h3>
+        <p>Jede Figur braucht mindestens einen <b>verbuendeten Nachbarn</b> auf einem der 8 angrenzenden Felder (orthogonal oder diagonal). Figuren ohne Nachbarn werden <b>angezaehlt</b> <span style="color:#d04040">(roter Rand)</span> und sterben, falls sie nach dem naechsten eigenen Zug noch immer allein stehen. Du hast also <b>einen Zug</b> Zeit, die Verbindung zu reparieren.</p>
+        <p>Ausnahme: Die allerletzte Figur eines Spielers kann nicht isoliert sterben.</p>
+
+        <h3>Schlagen &amp; Verwandlung</h3>
+        <p>Figuren schlagen, indem sie auf ein gegnerisches Feld ziehen. Schlaegt ein <b>Tuemmler (P)</b>, verwandelt er sich sofort in einen <b>Orca (O)</b> &mdash; die staerkste Figur im Spiel.</p>
+
+        <h3>Figuren</h3>
+        <div class="piece-help">
+            <div class="piece-info"><span class="name">H &ndash; Hauptmann (x1)</span><br><span class="desc">1 Feld, alle 8 Richtungen.</span></div>
+            <div class="piece-info"><span class="name">W &ndash; Waechter (x2)</span><br><span class="desc">1 Feld, 6 Richtungen (nicht diag. rueckwaerts).</span></div>
+            <div class="piece-info"><span class="name">K &ndash; Klinge (x2)</span><br><span class="desc">1 Feld: vorwaerts + alle 4 Diagonalen.</span></div>
+            <div class="piece-info"><span class="name">S &ndash; Springer (x1)</span><br><span class="desc">L-Sprung (wie im Schach), ueberspringt Figuren.</span></div>
+            <div class="piece-info"><span class="name">T &ndash; Turm (x1)</span><br><span class="desc">Gleitet beliebig weit orthogonal.</span></div>
+            <div class="piece-info"><span class="name">P &ndash; Tuemmler (x2)</span><br><span class="desc">1 Feld vor ODER beliebig weit seitwaerts. Wird zum Orca bei Schlag!</span></div>
+            <div class="piece-info"><span class="name">O &ndash; Orca</span><br><span class="desc">Beliebig weit orthogonal + 1 Feld diagonal. Entsteht nur durch Verwandlung.</span></div>
+        </div>
+
+        <h3>Remis</h3>
+        <p>Dreifache Stellungswiederholung oder 50 Zuege ohne Schlag/Tod.</p>
+    </div>
+
+    <div id="game-over-overlay">
+        <div id="game-over-box">
+            <h2 id="game-over-title"></h2>
+            <p id="game-over-text"></p>
+            <button id="btn-new-game-over">Neues Spiel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ============================================================
+    //  TETHARI — Game Engine + AI + UI
+    //  Rule variant: "Angezaehlt" — isolated pieces get one-turn
+    //  grace period before dying.
+    // ============================================================
+
+    const WHITE = 'white';
+    const BLACK = 'black';
+    const FILES = 'abcdef';
+    const PIECE_NAMES = {
+        H: 'Hauptmann', W: 'Waechter', K: 'Klinge',
+        S: 'Springer', T: 'Turm', P: 'Tuemmler', O: 'Orca'
+    };
+    const MATERIAL = { P: 150, K: 280, W: 320, H: 380, S: 450, T: 500, O: 750 };
+
+    function inBounds(f, r) { return f >= 0 && f < 6 && r >= 0 && r < 6; }
+    function coordStr(f, r) { return FILES[f] + (r + 1); }
+    function opp(p) { return p === WHITE ? BLACK : WHITE; }
+    function fwd(p) { return p === WHITE ? 1 : -1; }
+
+    // ---- Movement definitions ----
+    function stepDeltas(type, player) {
+        const d = fwd(player);
+        switch (type) {
+            case 'H': return [[-1,-1],[0,-1],[1,-1],[-1,0],[1,0],[-1,1],[0,1],[1,1]];
+            case 'W': return [[-1,d],[0,d],[1,d],[-1,0],[1,0],[0,-d]];
+            case 'K': return [[0,d],[-1,d],[1,d],[-1,-d],[1,-d]];
+            case 'S': return [[-2,-1],[-2,1],[-1,-2],[-1,2],[1,-2],[1,2],[2,-1],[2,1]];
+            case 'O': return [[-1,-1],[-1,1],[1,-1],[1,1]];
+            default: return [];
+        }
+    }
+
+    function slideDirs(type) {
+        switch (type) {
+            case 'T': return [[0,1],[0,-1],[1,0],[-1,0]];
+            case 'P': return [[1,0],[-1,0]];
+            case 'O': return [[0,1],[0,-1],[1,0],[-1,0]];
+            default: return [];
+        }
+    }
+
+    const ORTHO = [[0,1],[0,-1],[1,0],[-1,0]];
+    const ALL_DIRS = [[0,1],[0,-1],[1,0],[-1,0],[-1,-1],[-1,1],[1,-1],[1,1]];
+
+    // ---- Piece factory ----
+    function makePiece(player, type) {
+        return { player, type, endangered: false };
+    }
+
+    // ============================================================
+    //  Game State
+    // ============================================================
+    class TethariGame {
+        constructor() {
+            this.isSearching = false;
+            this.reset();
+        }
+
+        reset() {
+            this.board = Array.from({length: 6}, () => Array(6).fill(null));
+            this.activePlayer = WHITE;
+            this.moveCount = 0;
+            this.movesWithoutEvent = 0;
+            this.positionHistory = [];
+            this.moveLog = [];
+            this.capturedWhite = [];
+            this.capturedBlack = [];
+            this.gameOver = false;
+            this.winner = null;
+            this.lastMove = null;
+            this.lastDeaths = [];
+            this.lastEndangered = [];
+            this.isSearching = false;
+            this._setup();
+            this.positionHistory.push(this._hash());
+        }
+
+        _setup() {
+            const s = (f, r, pl, t) => { this.board[f][r] = makePiece(pl, t); };
+            s(0,0,WHITE,'K'); s(1,0,WHITE,'W'); s(2,0,WHITE,'T');
+            s(3,0,WHITE,'H'); s(4,0,WHITE,'W'); s(5,0,WHITE,'K');
+            s(1,1,WHITE,'P'); s(3,1,WHITE,'S'); s(5,1,WHITE,'P');
+            s(1,4,BLACK,'P'); s(3,4,BLACK,'S'); s(5,4,BLACK,'P');
+            s(0,5,BLACK,'K'); s(1,5,BLACK,'W'); s(2,5,BLACK,'T');
+            s(3,5,BLACK,'H'); s(4,5,BLACK,'W'); s(5,5,BLACK,'K');
+        }
+
+        _hash() {
+            let h = this.activePlayer[0];
+            for (let f = 0; f < 6; f++)
+                for (let r = 0; r < 6; r++) {
+                    const p = this.board[f][r];
+                    h += p ? (p.player[0] + p.type + (p.endangered ? 'E' : '')) : '.';
+                }
+            return h;
+        }
+
+        pieces(player) {
+            const out = [];
+            for (let f = 0; f < 6; f++)
+                for (let r = 0; r < 6; r++) {
+                    const p = this.board[f][r];
+                    if (p && p.player === player)
+                        out.push({ file: f, rank: r, type: p.type, endangered: p.endangered });
+                }
+            return out;
+        }
+
+        _isIsolated(f, r, player) {
+            for (const [df, dr] of ALL_DIRS) {
+                const nf = f + df, nr = r + dr;
+                if (inBounds(nf, nr)) {
+                    const n = this.board[nf][nr];
+                    if (n && n.player === player) return false;
+                }
+            }
+            return true;
+        }
+
+        // Generate moves for one piece
+        movesFor(f, r) {
+            const piece = this.board[f][r];
+            if (!piece) return [];
+            const moves = [];
+            const pl = piece.player;
+            const type = piece.type;
+
+            // Step moves
+            for (const [df, dr] of stepDeltas(type, pl)) {
+                const tf = f + df, tr = r + dr;
+                if (!inBounds(tf, tr)) continue;
+                const tgt = this.board[tf][tr];
+                if (!tgt || tgt.player !== pl)
+                    moves.push({ from: {file:f,rank:r}, to: {file:tf,rank:tr} });
+            }
+
+            // Tuemmler forward step
+            if (type === 'P') {
+                const d = fwd(pl);
+                const tr = r + d;
+                if (inBounds(f, tr)) {
+                    const tgt = this.board[f][tr];
+                    if (!tgt || tgt.player !== pl)
+                        moves.push({ from: {file:f,rank:r}, to: {file:f,rank:tr} });
+                }
+            }
+
+            // Slide moves
+            for (const [df, dr] of slideDirs(type)) {
+                let cf = f + df, cr = r + dr;
+                while (inBounds(cf, cr)) {
+                    const tgt = this.board[cf][cr];
+                    if (!tgt) {
+                        moves.push({ from: {file:f,rank:r}, to: {file:cf,rank:cr} });
+                    } else if (tgt.player !== pl) {
+                        moves.push({ from: {file:f,rank:r}, to: {file:cf,rank:cr} });
+                        break;
+                    } else break;
+                    cf += df; cr += dr;
+                }
+            }
+            return moves;
+        }
+
+        allMoves(player) {
+            const moves = [];
+            for (let f = 0; f < 6; f++)
+                for (let r = 0; r < 6; r++)
+                    if (this.board[f][r] && this.board[f][r].player === player)
+                        for (const m of this.movesFor(f, r))
+                            moves.push(m);
+            return moves;
+        }
+
+        // ---- Core turn execution ----
+        // Sequence per turn:
+        //   1. Move piece (capture, promotion)
+        //   2. Resolve previously endangered pieces (die if still isolated)
+        //   3. Mark newly isolated pieces as endangered
+        //   4. Win / draw / switch / zugzwang
+        executeMove(move) {
+            const piece = this.board[move.from.file][move.from.rank];
+            const target = this.board[move.to.file][move.to.rank];
+            const player = piece.player;
+            let captured = false;
+            let capturedType = null;
+            let promoted = false;
+
+            // 1. Move
+            this.board[move.to.file][move.to.rank] = piece;
+            this.board[move.from.file][move.from.rank] = null;
+
+            // 2. Capture
+            if (target) {
+                captured = true;
+                capturedType = target.type;
+                if (target.player === WHITE) this.capturedWhite.push(target.type);
+                else this.capturedBlack.push(target.type);
+            }
+
+            // 3. Promotion (Tuemmler captures -> Orca)
+            if (piece.type === 'P' && captured) {
+                this.board[move.to.file][move.to.rank] = makePiece(player, 'O');
+                promoted = true;
+            }
+
+            // 4. Resolve previously endangered pieces of active player
+            const deaths = this._resolveEndangered(player);
+
+            // 5. Mark newly isolated pieces as endangered
+            const newEndangered = this._markEndangered(player);
+
+            // 6. State bookkeeping
+            const eventOccurred = captured || deaths.length > 0;
+            this.movesWithoutEvent = eventOccurred ? 0 : this.movesWithoutEvent + 1;
+            this.moveCount++;
+
+            // Store for UI
+            this.lastMove = { ...move, captured, capturedType, promoted };
+            this.lastDeaths = deaths;
+            this.lastEndangered = newEndangered;
+
+            // 7. Logging (skip during AI search)
+            if (!this.isSearching) {
+                const nota = this._notation(piece.type, move, captured, promoted, deaths, newEndangered);
+                if (player === WHITE) {
+                    this.moveLog.push({ num: Math.ceil(this.moveCount / 2), white: nota, black: '' });
+                } else if (this.moveLog.length > 0) {
+                    this.moveLog[this.moveLog.length - 1].black = nota;
+                }
+            }
+
+            // 8. Win check
+            const wc = this.pieces(WHITE).length;
+            const bc = this.pieces(BLACK).length;
+            if (wc === 0) { this.gameOver = true; this.winner = BLACK; return; }
+            if (bc === 0) { this.gameOver = true; this.winner = WHITE; return; }
+
+            // 9. Switch player THEN hash (hash should include whose turn it is)
+            this.activePlayer = opp(player);
+            this.positionHistory.push(this._hash());
+
+            // 10. Draw check
+            const currentHash = this._hash();
+            const reps = this.positionHistory.filter(h => h === currentHash).length;
+            if (reps >= 3 || this.movesWithoutEvent >= 100) {
+                this.gameOver = true;
+                this.winner = 'draw';
+                return;
+            }
+
+            // 11. Zugzwang check
+            if (this.allMoves(this.activePlayer).length === 0) {
+                this.gameOver = true;
+                this.winner = opp(this.activePlayer);
+            }
+        }
+
+        // Kill endangered+isolated pieces. Returns array of death positions.
+        _resolveEndangered(player) {
+            const pcs = this.pieces(player);
+            if (pcs.length <= 1) {
+                // Last man rule: clear all endangered
+                for (const p of pcs)
+                    if (this.board[p.file][p.rank]) this.board[p.file][p.rank].endangered = false;
+                return [];
+            }
+
+            const deaths = [];
+            // Identify deaths and clearances on the PRE-removal board
+            const toClear = [];
+            for (const p of pcs) {
+                if (!p.endangered) continue;
+                if (this._isIsolated(p.file, p.rank, player)) {
+                    deaths.push({ file: p.file, rank: p.rank, type: p.type });
+                } else {
+                    toClear.push(p);
+                }
+            }
+
+            // Clear reconnected endangered marks
+            for (const p of toClear)
+                if (this.board[p.file][p.rank]) this.board[p.file][p.rank].endangered = false;
+
+            // Remove dead pieces simultaneously
+            for (const d of deaths) {
+                const dying = this.board[d.file][d.rank];
+                if (dying) {
+                    if (dying.player === WHITE) this.capturedWhite.push(dying.type);
+                    else this.capturedBlack.push(dying.type);
+                    this.board[d.file][d.rank] = null;
+                }
+            }
+
+            return deaths;
+        }
+
+        // Mark isolated pieces as endangered. Returns array of newly endangered positions.
+        _markEndangered(player) {
+            const pcs = this.pieces(player);
+            if (pcs.length <= 1) {
+                for (const p of pcs)
+                    if (this.board[p.file][p.rank]) this.board[p.file][p.rank].endangered = false;
+                return [];
+            }
+
+            const newlyEndangered = [];
+            for (const p of pcs) {
+                const iso = this._isIsolated(p.file, p.rank, player);
+                const cell = this.board[p.file][p.rank];
+                if (iso) {
+                    if (!cell.endangered) newlyEndangered.push({ file: p.file, rank: p.rank });
+                    cell.endangered = true;
+                } else {
+                    cell.endangered = false;
+                }
+            }
+            return newlyEndangered;
+        }
+
+        _notation(type, move, captured, promoted, deaths, endangered) {
+            const from = coordStr(move.from.file, move.from.rank);
+            const to = coordStr(move.to.file, move.to.rank);
+            let n = type + from + (captured ? 'x' : '-') + to;
+            if (promoted) n += '=O';
+            for (const d of deaths) n += ' \u2020' + coordStr(d.file, d.rank);
+            for (const e of endangered) n += ' !' + coordStr(e.file, e.rank);
+            return n;
+        }
+
+        saveState() {
+            return {
+                board: this.board.map(col => col.map(c => c ? {...c} : null)),
+                activePlayer: this.activePlayer,
+                moveCount: this.moveCount,
+                movesWithoutEvent: this.movesWithoutEvent,
+                gameOver: this.gameOver,
+                winner: this.winner,
+                capturedWhite: [...this.capturedWhite],
+                capturedBlack: [...this.capturedBlack],
+                positionHistory: [...this.positionHistory],
+            };
+        }
+
+        restoreState(s) {
+            this.board = s.board;
+            this.activePlayer = s.activePlayer;
+            this.moveCount = s.moveCount;
+            this.movesWithoutEvent = s.movesWithoutEvent;
+            this.gameOver = s.gameOver;
+            this.winner = s.winner;
+            this.capturedWhite = s.capturedWhite;
+            this.capturedBlack = s.capturedBlack;
+            this.positionHistory = s.positionHistory;
+        }
+    }
+
+    // ============================================================
+    //  AI — Minimax with Alpha-Beta
+    // ============================================================
+    function evaluate(game) {
+        let score = 0;
+
+        for (let f = 0; f < 6; f++) {
+            for (let r = 0; r < 6; r++) {
+                const piece = game.board[f][r];
+                if (!piece) continue;
+                const sign = piece.player === WHITE ? 1 : -1;
+
+                // Material
+                score += sign * MATERIAL[piece.type];
+
+                // Endangered penalty (at risk of dying)
+                if (piece.endangered) score -= sign * Math.round(MATERIAL[piece.type] * 0.4);
+
+                // Connectivity (all 8 directions count)
+                let neighbors = 0;
+                for (const [df, dr] of ALL_DIRS) {
+                    const nf = f + df, nr = r + dr;
+                    if (inBounds(nf, nr) && game.board[nf][nr] && game.board[nf][nr].player === piece.player)
+                        neighbors++;
+                }
+                score += sign * neighbors * 25;
+
+                // Centrality
+                if (r >= 2 && r <= 3) score += sign * 15;
+
+                // Advanced position with connection
+                const adv = piece.player === WHITE ? r : (5 - r);
+                if (adv >= 3 && neighbors > 0) score += sign * 20;
+
+                // Tuemmler progress
+                if (piece.type === 'P') {
+                    score += sign * adv * 40;
+                    for (const df of [-1, 1]) {
+                        const nf = f + df;
+                        if (inBounds(nf, r) && game.board[nf][r] && game.board[nf][r].player !== piece.player)
+                            score += sign * 80;
+                    }
+                    const fr = r + fwd(piece.player);
+                    if (inBounds(f, fr) && game.board[f][fr] && game.board[f][fr].player !== piece.player)
+                        score += sign * 80;
+                }
+            }
+        }
+
+        // Formation coherence
+        for (const player of [WHITE, BLACK]) {
+            const groups = countGroups(game.board, player);
+            const sign = player === WHITE ? 1 : -1;
+            if (groups <= 1) score += sign * 50;
+            else score -= sign * (groups - 1) * 40;
+        }
+
+        return score;
+    }
+
+    function countGroups(board, player) {
+        const vis = Array.from({length: 6}, () => Array(6).fill(false));
+        let groups = 0;
+        for (let f = 0; f < 6; f++) {
+            for (let r = 0; r < 6; r++) {
+                if (board[f][r] && board[f][r].player === player && !vis[f][r]) {
+                    groups++;
+                    const q = [{f, r}];
+                    vis[f][r] = true;
+                    while (q.length) {
+                        const {f: cf, r: cr} = q.shift();
+                        for (const [df, dr] of ALL_DIRS) {
+                            const nf = cf+df, nr = cr+dr;
+                            if (inBounds(nf, nr) && !vis[nf][nr] && board[nf][nr] && board[nf][nr].player === player) {
+                                vis[nf][nr] = true;
+                                q.push({f: nf, r: nr});
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return groups;
+    }
+
+    function minimax(game, depth, alpha, beta, maximizing) {
+        if (game.gameOver) {
+            if (game.winner === WHITE) return 100000 + depth;
+            if (game.winner === BLACK) return -100000 - depth;
+            return 0;
+        }
+        if (depth === 0) return evaluate(game);
+
+        const moves = game.allMoves(game.activePlayer);
+        if (moves.length === 0) return maximizing ? -100000 : 100000;
+
+        // Move ordering: captures first
+        moves.sort((a, b) => {
+            const ac = game.board[a.to.file][a.to.rank] ? MATERIAL[game.board[a.to.file][a.to.rank].type] : 0;
+            const bc = game.board[b.to.file][b.to.rank] ? MATERIAL[game.board[b.to.file][b.to.rank].type] : 0;
+            if (ac !== bc) return bc - ac;
+            const ad = Math.abs(a.to.file-2.5) + Math.abs(a.to.rank-2.5);
+            const bd = Math.abs(b.to.file-2.5) + Math.abs(b.to.rank-2.5);
+            return ad - bd;
+        });
+
+        if (maximizing) {
+            let best = -Infinity;
+            for (const move of moves) {
+                const saved = game.saveState();
+                game.executeMove(move);
+                const val = minimax(game, depth-1, alpha, beta, false);
+                game.restoreState(saved);
+                if (val > best) best = val;
+                if (val > alpha) alpha = val;
+                if (beta <= alpha) break;
+            }
+            return best;
+        } else {
+            let best = Infinity;
+            for (const move of moves) {
+                const saved = game.saveState();
+                game.executeMove(move);
+                const val = minimax(game, depth-1, alpha, beta, true);
+                game.restoreState(saved);
+                if (val < best) best = val;
+                if (val < beta) beta = val;
+                if (beta <= alpha) break;
+            }
+            return best;
+        }
+    }
+
+    function findBestMove(game, depth) {
+        const moves = game.allMoves(game.activePlayer);
+        if (moves.length === 0) return null;
+
+        game.isSearching = true;
+
+        const isMax = game.activePlayer === WHITE;
+        let bestVal = isMax ? -Infinity : Infinity;
+        let bestMoves = [];
+
+        moves.sort((a, b) => {
+            const ac = game.board[a.to.file][a.to.rank] ? MATERIAL[game.board[a.to.file][a.to.rank].type] : 0;
+            const bc = game.board[b.to.file][b.to.rank] ? MATERIAL[game.board[b.to.file][b.to.rank].type] : 0;
+            return bc - ac;
+        });
+
+        for (const move of moves) {
+            const saved = game.saveState();
+            game.executeMove(move);
+            const val = minimax(game, depth-1, -Infinity, Infinity, !isMax);
+            game.restoreState(saved);
+
+            if (isMax ? val > bestVal : val < bestVal) {
+                bestVal = val;
+                bestMoves = [move];
+            } else if (val === bestVal) {
+                bestMoves.push(move);
+            }
+        }
+
+        game.isSearching = false;
+        return bestMoves[Math.floor(Math.random() * bestMoves.length)];
+    }
+
+    // ============================================================
+    //  UI
+    // ============================================================
+    const game = new TethariGame();
+    let selectedPiece = null;
+    let validMoves = [];
+    let aiDepth = 3;
+    let aiThinking = false;
+    const humanPlayer = WHITE;
+    const aiPlayer = BLACK;
+
+    const boardEl = document.getElementById('board');
+    const statusEl = document.getElementById('status');
+    const moveListEl = document.getElementById('move-list');
+    const whiteCapturedEl = document.getElementById('white-captured');
+    const blackCapturedEl = document.getElementById('black-captured');
+
+    function init() {
+        const rl = document.getElementById('rank-labels');
+        const fl = document.getElementById('file-labels');
+        rl.innerHTML = '';
+        fl.innerHTML = '';
+        for (let i = 0; i < 6; i++) {
+            const r = document.createElement('div');
+            r.className = 'rank-label';
+            r.textContent = 6 - i;
+            rl.appendChild(r);
+            const f = document.createElement('div');
+            f.className = 'file-label';
+            f.textContent = FILES[i];
+            fl.appendChild(f);
+        }
+        buildBoard();
+        renderAll();
+        document.getElementById('btn-new').addEventListener('click', newGame);
+        document.getElementById('btn-new-game-over').addEventListener('click', () => {
+            document.getElementById('game-over-overlay').classList.remove('visible');
+            newGame();
+        });
+        document.getElementById('difficulty').addEventListener('change', e => {
+            aiDepth = parseInt(e.target.value);
+        });
+        document.getElementById('help-toggle').addEventListener('click', () => {
+            document.getElementById('help-panel').classList.toggle('visible');
+        });
+    }
+
+    function newGame() {
+        game.reset();
+        selectedPiece = null;
+        validMoves = [];
+        aiThinking = false;
+        renderAll();
+    }
+
+    function buildBoard() {
+        boardEl.innerHTML = '';
+        for (let dr = 0; dr < 6; dr++) {
+            for (let dc = 0; dc < 6; dc++) {
+                const cell = document.createElement('div');
+                const f = dc, r = 5 - dr;
+                cell.className = 'cell ' + ((dr + dc) % 2 === 0 ? 'light' : 'dark');
+                cell.dataset.file = f;
+                cell.dataset.rank = r;
+                cell.addEventListener('click', () => onCellClick(f, r));
+                boardEl.appendChild(cell);
+            }
+        }
+    }
+
+    function renderAll() {
+        renderBoard();
+        renderCaptured();
+        renderMoveLog();
+        updateStatus();
+    }
+
+    function renderBoard() {
+        boardEl.querySelectorAll('.cell').forEach(cell => {
+            const f = parseInt(cell.dataset.file);
+            const r = parseInt(cell.dataset.rank);
+            const dr = 5 - r;
+
+            cell.className = 'cell ' + ((dr + f) % 2 === 0 ? 'light' : 'dark');
+
+            if (game.lastMove) {
+                if (f === game.lastMove.from.file && r === game.lastMove.from.rank) cell.classList.add('last-from');
+                if (f === game.lastMove.to.file && r === game.lastMove.to.rank) cell.classList.add('last-to');
+            }
+            if (selectedPiece && f === selectedPiece.file && r === selectedPiece.rank)
+                cell.classList.add('selected');
+
+            const isValid = validMoves.find(m => m.to.file === f && m.to.rank === r);
+            if (isValid) {
+                const tgt = game.board[f][r];
+                cell.classList.add(tgt && tgt.player !== game.activePlayer ? 'valid-capture' : 'valid-move');
+            }
+
+            cell.innerHTML = '';
+            const piece = game.board[f][r];
+            if (piece) {
+                const el = document.createElement('div');
+                let cls = 'piece ' + piece.player;
+                if (piece.endangered) cls += ' endangered';
+                el.className = cls;
+                el.innerHTML = `${piece.type}<span class="sub">${PIECE_NAMES[piece.type].substring(0,3).toUpperCase()}</span>`;
+                el.title = PIECE_NAMES[piece.type] + (piece.endangered ? ' (angezaehlt!)' : '');
+                cell.appendChild(el);
+            }
+        });
+    }
+
+    function onCellClick(f, r) {
+        if (game.gameOver || aiThinking || game.activePlayer !== humanPlayer) return;
+
+        const move = validMoves.find(m => m.to.file === f && m.to.rank === r);
+        if (move) {
+            doHumanMove(move);
+            return;
+        }
+
+        const piece = game.board[f][r];
+        if (piece && piece.player === humanPlayer) {
+            selectedPiece = { file: f, rank: r };
+            validMoves = game.movesFor(f, r);
+            renderBoard();
+            return;
+        }
+
+        selectedPiece = null;
+        validMoves = [];
+        renderBoard();
+    }
+
+    function doHumanMove(move) {
+        game.executeMove(move);
+        selectedPiece = null;
+        validMoves = [];
+        renderAll();
+        flashDeaths(game.lastDeaths);
+
+        if (game.gameOver) { showGameOver(); return; }
+        if (game.activePlayer === aiPlayer) doAI();
+    }
+
+    function doAI() {
+        aiThinking = true;
+        statusEl.textContent = 'Computer denkt\u2026';
+        statusEl.className = 'thinking';
+
+        setTimeout(() => {
+            const best = findBestMove(game, aiDepth);
+            if (!best) {
+                game.gameOver = true;
+                game.winner = humanPlayer;
+                renderAll();
+                showGameOver();
+                aiThinking = false;
+                return;
+            }
+
+            animateMove(best, () => {
+                game.executeMove(best);
+                aiThinking = false;
+                renderAll();
+                flashDeaths(game.lastDeaths);
+                if (game.gameOver) showGameOver();
+            });
+        }, 60);
+    }
+
+    function animateMove(move, callback) {
+        const fromIdx = (5 - move.from.rank) * 6 + move.from.file;
+        const toIdx = (5 - move.to.rank) * 6 + move.to.file;
+        const fromCell = boardEl.children[fromIdx];
+        const toCell = boardEl.children[toIdx];
+        const pieceEl = fromCell.querySelector('.piece');
+
+        if (!pieceEl) { callback(); return; }
+
+        const fromRect = fromCell.getBoundingClientRect();
+        const toRect = toCell.getBoundingClientRect();
+        const dx = toRect.left - fromRect.left;
+        const dy = toRect.top - fromRect.top;
+
+        pieceEl.style.zIndex = '10';
+        pieceEl.style.transition = 'transform 0.35s ease-in-out';
+        void pieceEl.offsetWidth; // force reflow
+        pieceEl.style.transform = `translate(${dx}px, ${dy}px)`;
+
+        let done = false;
+        const finish = () => {
+            if (done) return;
+            done = true;
+            callback();
+        };
+
+        pieceEl.addEventListener('transitionend', finish, { once: true });
+        setTimeout(finish, 400); // fallback
+    }
+
+    function flashDeaths(deaths) {
+        for (const d of deaths) {
+            const idx = (5 - d.rank) * 6 + d.file;
+            const cell = boardEl.children[idx];
+            if (cell) {
+                cell.classList.add('death-flash');
+                setTimeout(() => cell.classList.remove('death-flash'), 600);
+            }
+        }
+    }
+
+    function updateStatus() {
+        statusEl.className = '';
+        if (game.gameOver) {
+            if (game.winner === 'draw') statusEl.textContent = 'Remis!';
+            else if (game.winner === humanPlayer) statusEl.textContent = 'Du hast gewonnen!';
+            else statusEl.textContent = 'Computer gewinnt!';
+        } else {
+            statusEl.textContent = game.activePlayer === humanPlayer
+                ? 'Dein Zug (Weiss)' : 'Computer denkt\u2026';
+            if (game.activePlayer === aiPlayer) statusEl.className = 'thinking';
+        }
+    }
+
+    function showGameOver() {
+        const ov = document.getElementById('game-over-overlay');
+        const ti = document.getElementById('game-over-title');
+        const tx = document.getElementById('game-over-text');
+        if (game.winner === 'draw') {
+            ti.textContent = 'Remis';
+            tx.textContent = 'Die Partie endet unentschieden.';
+        } else if (game.winner === humanPlayer) {
+            ti.textContent = 'Sieg!';
+            tx.textContent = 'Du hast alle gegnerischen Figuren eliminiert.';
+        } else {
+            ti.textContent = 'Niederlage';
+            tx.textContent = 'Der Computer hat deine Formation zerstoert.';
+        }
+        ov.classList.add('visible');
+    }
+
+    function renderCaptured() {
+        whiteCapturedEl.innerHTML = '';
+        for (const t of game.capturedWhite) {
+            const el = document.createElement('div');
+            el.className = 'captured-piece white';
+            el.textContent = t;
+            el.title = PIECE_NAMES[t];
+            whiteCapturedEl.appendChild(el);
+        }
+        blackCapturedEl.innerHTML = '';
+        for (const t of game.capturedBlack) {
+            const el = document.createElement('div');
+            el.className = 'captured-piece black';
+            el.textContent = t;
+            el.title = PIECE_NAMES[t];
+            blackCapturedEl.appendChild(el);
+        }
+    }
+
+    function renderMoveLog() {
+        moveListEl.innerHTML = '';
+        for (const e of game.moveLog) {
+            const line = document.createElement('div');
+            let h = `<span class="move-num">${e.num}.</span> ${fmtMove(e.white)}`;
+            if (e.black) h += `  ${fmtMove(e.black)}`;
+            line.innerHTML = h;
+            moveListEl.appendChild(line);
+        }
+        moveListEl.scrollTop = moveListEl.scrollHeight;
+    }
+
+    function fmtMove(txt) {
+        return txt
+            .replace(/x/g, '<span class="capture">x</span>')
+            .replace(/\u2020\w+/g, '<span class="death">$&</span>')
+            .replace(/!\w+/g, '<span class="endangered">$&</span>')
+            .replace(/=O/g, '<span class="promotion">=O</span>');
+    }
+
+    init();
+</script>
+</body>
+</html>
