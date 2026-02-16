@@ -4,15 +4,265 @@
   const FILES = 'abcdef';
   const BOARD_SIZE = 6;
 
-  const PIECE_NAMES = {
-    H: 'Hauptmann',
-    W: 'Waechter',
-    K: 'Klinge',
-    S: 'Springer',
-    T: 'Turm',
-    P: 'Tuemmler',
-    O: 'Orca'
+  function detectLanguage() {
+    try {
+      const preferred = localStorage.getItem('tethari_lang');
+      if (preferred === 'de' || preferred === 'en') return preferred;
+    } catch (_error) {
+      // Ignore storage access issues and fall back to browser language.
+    }
+
+    const langs = Array.isArray(navigator.languages) && navigator.languages.length > 0
+      ? navigator.languages
+      : [navigator.language || 'en'];
+
+    for (const lang of langs) {
+      if (typeof lang === 'string' && lang.toLowerCase().startsWith('de')) return 'de';
+      if (typeof lang === 'string' && lang.toLowerCase().startsWith('en')) return 'en';
+    }
+    return 'en';
+  }
+
+  const LANG = detectLanguage();
+
+  const I18N = {
+    de: {
+      titles: { game: 'Tethari - Spiel', test: 'Tethari - Test' },
+      players: { white: 'Weiß', black: 'Schwarz' },
+      pieceNames: { H: 'Hauptmann', W: 'Wächter', K: 'Klinge', S: 'Springer', T: 'Turm', P: 'Plänkler', B: 'Brecher' },
+      chapters: {
+        movement: '§6 Bewegung',
+        capture: '§7 Schlagen',
+        isolation: '§8 Isolation',
+        promotion: '§9 Verwandlung',
+        draw: '§10 Remis',
+        other: 'Sonstiges'
+      },
+      ui: {
+        capturedBlack: 'Verluste Schwarz',
+        capturedWhite: 'Verluste Weiß',
+        moveLog: 'Partieverlauf',
+        movementPanel: 'Bewegungsgrafik',
+        moveHint: 'Grafik aus Weiß-Perspektive. Bei Schwarz ist vorwärts gespiegelt.',
+        btnNew: 'Neues Spiel',
+        btnRules: 'Regeln',
+        btnLangTitle: 'Sprache wechseln',
+        difficultyTitle: 'KI-Stärke',
+        difficultyLight: 'Leicht',
+        difficultyMedium: 'Mittel',
+        difficultyHard: 'Schwer',
+        statusYourTurn: 'Dein Zug ({player})',
+        statusComputerThinking: 'Computer denkt…',
+        statusDraw: 'Remis!',
+        statusYouWon: 'Du hast gewonnen!',
+        statusComputerWon: 'Computer gewinnt!',
+        overlayDrawTitle: 'Remis',
+        overlayDrawText: 'Die Partie endet unentschieden.',
+        overlayWinTitle: 'Sieg!',
+        overlayWinText: 'Du hast alle gegnerischen Figuren eliminiert.',
+        overlayLossTitle: 'Niederlage',
+        overlayLossText: 'Der Computer hat deine Formation zerstört.',
+        endangeredSuffix: ' (angezählt!)',
+        helpGoalTitle: 'Ziel',
+        helpGoalText: 'Eliminiere alle gegnerischen Figuren. Es gibt keinen König — jede Figur zählt.',
+        helpIsolationTitle: 'Die Isolationsregel',
+        helpIsolationText: 'Jede Figur braucht mindestens einen <b>verbündeten Nachbarn</b> auf einem der 8 angrenzenden Felder (orthogonal oder diagonal). Figuren ohne Nachbarn werden <b>angezählt</b> <span style="color:#d04040">(roter Rand)</span> und sterben, falls sie nach dem nächsten eigenen Zug noch immer allein stehen. Du hast also <b>einen Zug</b> Zeit, die Verbindung zu reparieren.',
+        helpIsolationException: 'Ausnahme: Die allerletzte Figur eines Spielers kann nicht isoliert sterben.',
+        helpCaptureTitle: 'Schlagen &amp; Verwandlung',
+        helpCaptureText: 'Figuren schlagen, indem sie auf ein gegnerisches Feld ziehen. Schlägt ein <b>Plänkler (P)</b>, verwandelt er sich sofort in einen <b>Brecher (B)</b> — die stärkste Figur im Spiel.',
+        helpPiecesTitle: 'Figuren',
+        helpDrawTitle: 'Remis',
+        helpDrawText: 'Dreifache Stellungswiederholung oder 50 Züge ohne Schlag/Tod.',
+        testLabTitle: 'Test-Labor (Szenarien)',
+        testScenarioTitle: 'Test-Szenario',
+        testLoad: 'Szenario laden',
+        testReset: 'Reset Szene',
+        testInactive: 'Testmodus inaktiv',
+        testMovesPlaceholder: 'Züge, z.B. b2-b3 e5-e4 b3xb4',
+        testPrev: '← Zurück',
+        testNext: 'Schritt vor',
+        testRun: 'Alle Züge ausführen',
+        testSuite: 'Suite ausführen',
+        testStop: 'Testmodus beenden',
+        testModeStatus: 'Testmodus aktiv | Zug {cursor}/{total}',
+        testStatusHeader: 'Testmodus: Zug {cursor}/{total}',
+        invalidMoveFormat: 'Ungültiges Zugformat bei Schritt {step}: {token}',
+        illegalMove: 'Illegaler Zug bei Schritt {step} ({side}): {token}',
+        assertPieceAt: 'Figur auf {square}: erwartet {player} {piece}',
+        assertNoPieceAt: 'Feld {square}: erwartet leer',
+        assertEndangered: 'Angezählt auf {square}: erwartet {value}',
+        assertNotEndangered: 'Angezählt auf {square}: erwartet false',
+        assertCapturedCount: 'Verluste {player}: erwartet {expected}, ist {actual}',
+        assertActivePlayer: 'Aktiver Spieler: erwartet {expected}, ist {actual}',
+        assertGameOver: 'GameOver: erwartet {expected}, ist {actual}',
+        assertWinner: 'Gewinner: erwartet {expected}, ist {actual}',
+        assertPieceCount: 'Figurenanzahl {player}: erwartet {expected}, ist {actual}',
+        assertMovesWithoutEvent: 'movesWithoutEvent: erwartet {expected}, ist {actual}',
+        assertionsPending: 'Assertions werden am Ende des Szenarios ausgewertet.',
+        assertionsNone: 'Keine Assertions hinterlegt.',
+        suiteNotRun: 'Suite noch nicht ausgeführt.',
+        suiteSummary: 'Suite: {passed}/{total} PASS | {failed} FAIL'
+      },
+      moveCards: {
+        H: { name: 'Hauptmann', desc: '1 Feld in alle 8 Richtungen' },
+        W: { name: 'Wächter', desc: '6 Richtungen, keine diagonale Vorwärtsbewegung' },
+        K: { name: 'Klinge', desc: 'Vorwärts + alle diagonalen Einzelschritte' },
+        S: { name: 'Springer', desc: 'L-Sprung, kann Figuren überspringen' },
+        T: { name: 'Turm', desc: 'Beliebig weit orthogonal' },
+        P: { name: 'Plänkler', desc: '1 Feld vorwärts oder seitwärts gleiten' },
+        B: { name: 'Brecher', desc: 'Orthogonal weit + diagonal 1 Feld' }
+      },
+      helpPieces: [
+        { name: 'H – Hauptmann (x1)', desc: '1 Feld, alle 8 Richtungen.' },
+        { name: 'W – Wächter (x2)', desc: '1 Feld, 6 Richtungen (nicht diag. vorwärts).' },
+        { name: 'K – Klinge (x2)', desc: '1 Feld: vorwärts + alle 4 Diagonalen.' },
+        { name: 'S – Springer (x1)', desc: 'L-Sprung (wie im Schach), überspringt Figuren.' },
+        { name: 'T – Turm (x1)', desc: 'Gleitet beliebig weit orthogonal.' },
+        { name: 'P – Plänkler (x2)', desc: '1 Feld vor ODER beliebig weit seitwärts. Wird zum Brecher bei Schlag!' },
+        { name: 'B – Brecher', desc: 'Beliebig weit orthogonal + 1 Feld diagonal. Entsteht nur durch Verwandlung.' }
+      ]
+    },
+    en: {
+      titles: { game: 'Tethari - Game', test: 'Tethari - Test' },
+      players: { white: 'White', black: 'Black' },
+      pieceNames: { H: 'Captain', W: 'Warden', K: 'Blade', S: 'Knight', T: 'Rook', P: 'Skirmisher', B: 'Breaker' },
+      chapters: {
+        movement: '§6 Movement',
+        capture: '§7 Capturing',
+        isolation: '§8 Isolation',
+        promotion: '§9 Promotion',
+        draw: '§10 Draw',
+        other: 'Other'
+      },
+      ui: {
+        capturedBlack: 'Black Losses',
+        capturedWhite: 'White Losses',
+        moveLog: 'Move Log',
+        movementPanel: 'Movement Reference',
+        moveHint: 'Diagram from White perspective. For Black, forward is mirrored.',
+        btnNew: 'New Game',
+        btnRules: 'Rules',
+        btnLangTitle: 'Switch language',
+        difficultyTitle: 'AI strength',
+        difficultyLight: 'Easy',
+        difficultyMedium: 'Medium',
+        difficultyHard: 'Hard',
+        statusYourTurn: 'Your turn ({player})',
+        statusComputerThinking: 'Computer is thinking…',
+        statusDraw: 'Draw!',
+        statusYouWon: 'You won!',
+        statusComputerWon: 'Computer wins!',
+        overlayDrawTitle: 'Draw',
+        overlayDrawText: 'The game ends in a draw.',
+        overlayWinTitle: 'Victory!',
+        overlayWinText: 'You eliminated all opposing pieces.',
+        overlayLossTitle: 'Defeat',
+        overlayLossText: 'The computer broke your formation.',
+        endangeredSuffix: ' (endangered!)',
+        helpGoalTitle: 'Goal',
+        helpGoalText: 'Eliminate all opposing pieces. There is no king — every piece counts.',
+        helpIsolationTitle: 'Isolation Rule',
+        helpIsolationText: 'Every piece needs at least one <b>allied neighbor</b> on one of the 8 adjacent squares (orthogonal or diagonal). Pieces without neighbors become <b>endangered</b> <span style="color:#d04040">(red border)</span> and die if they are still isolated after their next own move. So you have <b>one move</b> to reconnect.',
+        helpIsolationException: 'Exception: A player’s very last remaining piece cannot die from isolation.',
+        helpCaptureTitle: 'Capture &amp; Promotion',
+        helpCaptureText: 'Pieces capture by moving onto an enemy square. If a <b>Skirmisher (P)</b> captures, it is immediately promoted to a <b>Breaker (B)</b> — the strongest piece in the game.',
+        helpPiecesTitle: 'Pieces',
+        helpDrawTitle: 'Draw',
+        helpDrawText: 'Threefold repetition or 50 moves without capture/death.',
+        testLabTitle: 'Test Lab (Scenarios)',
+        testScenarioTitle: 'Test scenario',
+        testLoad: 'Load scenario',
+        testReset: 'Reset scene',
+        testInactive: 'Test mode inactive',
+        testMovesPlaceholder: 'Moves, e.g. b2-b3 e5-e4 b3xb4',
+        testPrev: '← Back',
+        testNext: 'Next step',
+        testRun: 'Run all moves',
+        testSuite: 'Run suite',
+        testStop: 'Exit test mode',
+        testModeStatus: 'Test mode active | Move {cursor}/{total}',
+        testStatusHeader: 'Test mode: Move {cursor}/{total}',
+        invalidMoveFormat: 'Invalid move format at step {step}: {token}',
+        illegalMove: 'Illegal move at step {step} ({side}): {token}',
+        assertPieceAt: 'Piece at {square}: expected {player} {piece}',
+        assertNoPieceAt: 'Square {square}: expected empty',
+        assertEndangered: 'Endangered at {square}: expected {value}',
+        assertNotEndangered: 'Endangered at {square}: expected false',
+        assertCapturedCount: 'Captured {player}: expected {expected}, got {actual}',
+        assertActivePlayer: 'Active player: expected {expected}, got {actual}',
+        assertGameOver: 'GameOver: expected {expected}, got {actual}',
+        assertWinner: 'Winner: expected {expected}, got {actual}',
+        assertPieceCount: 'Piece count {player}: expected {expected}, got {actual}',
+        assertMovesWithoutEvent: 'movesWithoutEvent: expected {expected}, got {actual}',
+        assertionsPending: 'Assertions are evaluated at the end of the scenario.',
+        assertionsNone: 'No assertions defined.',
+        suiteNotRun: 'Suite not run yet.',
+        suiteSummary: 'Suite: {passed}/{total} PASS | {failed} FAIL'
+      },
+      moveCards: {
+        H: { name: 'Captain', desc: '1 step in all 8 directions' },
+        W: { name: 'Warden', desc: '6 directions, no forward diagonals' },
+        K: { name: 'Blade', desc: 'Forward + all diagonal single steps' },
+        S: { name: 'Knight', desc: 'L-jump, can jump over pieces' },
+        T: { name: 'Rook', desc: 'Slides orthogonally any distance' },
+        P: { name: 'Skirmisher', desc: '1 step forward or sideways slide' },
+        B: { name: 'Breaker', desc: 'Orthogonal slide + 1-step diagonal' }
+      },
+      helpPieces: [
+        { name: 'H – Captain (x1)', desc: '1 step, all 8 directions.' },
+        { name: 'W – Warden (x2)', desc: '1 step, 6 directions (no forward diagonals).' },
+        { name: 'K – Blade (x2)', desc: '1 step: forward + all 4 diagonals.' },
+        { name: 'S – Knight (x1)', desc: 'L-jump (as in chess), jumps over pieces.' },
+        { name: 'T – Rook (x1)', desc: 'Slides orthogonally any distance.' },
+        { name: 'P – Skirmisher (x2)', desc: '1 step forward OR sideways slide. Promotes to Breaker on capture!' },
+        { name: 'B – Breaker', desc: 'Orthogonal slide any distance + 1-step diagonal. Created only by promotion.' }
+      ]
+    }
   };
+
+  function t(path, values = null) {
+    const parts = path.split('.');
+    let node = I18N[LANG];
+    for (const part of parts) node = node && node[part];
+    let text = typeof node === 'string' ? node : path;
+    if (!values) return text;
+    for (const [key, value] of Object.entries(values)) {
+      text = text.replaceAll(`{${key}}`, String(value));
+    }
+    return text;
+  }
+
+  function playerLabel(player) {
+    return player === WHITE ? t('players.white') : t('players.black');
+  }
+
+  const PIECE_NAMES = I18N[LANG].pieceNames;
+
+  const TEST_SCENARIO_EN = {
+    move_hauptmann_diagonal: { name: 'Movement: Captain diagonal', description: 'Captain moves 1 square diagonally and stays connected.' },
+    move_waechter_back_diagonal: { name: 'Movement: Warden backward diagonal', description: 'Warden uses the allowed backward-diagonal movement.' },
+    move_klinge_forward_diagonal: { name: 'Movement: Blade forward diagonal', description: 'Blade moves diagonally forward as defined in the rules.' },
+    move_springer_jump: { name: 'Movement: Knight jumps over piece', description: 'Knight jumps over occupied squares and lands legally in an L-shape.' },
+    move_turm_slide: { name: 'Movement: Rook orthogonal slide', description: 'Rook slides multiple squares orthogonally to an empty square.' },
+    move_plaenkler_side_glide: { name: 'Movement: Skirmisher sideways slide', description: 'Skirmisher can slide any distance sideways.' },
+    move_brecher_diagonal: { name: 'Movement: Breaker 1-step diagonal', description: 'Breaker can move 1 square diagonally.' },
+    capture_standard: { name: 'Capture: Standard capture', description: 'Standard capture removes the enemy piece without promotion.' },
+    promotion_brecher: { name: 'Promotion: Skirmisher -> Breaker', description: 'Verifies that a capturing Skirmisher is immediately promoted to Breaker.' },
+    isolation_mark_only: { name: 'Isolation: mark only, no immediate death', description: 'Newly isolated pieces are first only marked as endangered.' },
+    isolation_rescue_clears: { name: 'Isolation: rescue clears endangered', description: 'Endangered piece survives when reconnected in time.' },
+    isolation_death_unresolved: { name: 'Isolation: unresolved piece dies next own turn', description: 'Endangered piece dies if formation is not repaired.' },
+    last_man_rule: { name: 'Isolation: last-man exception', description: 'A single remaining piece is not marked endangered.' },
+    double_isolation_death: { name: 'Isolation: double death', description: 'Two endangered isolated pieces die simultaneously.' },
+    threefold_repetition: { name: 'Draw: threefold repetition', description: 'Position repeats three times and ends in a draw.' },
+    fifty_move_rule_threshold: { name: 'Draw: 50-move threshold', description: 'With movesWithoutEvent = 99, one quiet move immediately triggers a draw.' }
+  };
+
+  function scenarioLabel(scenario, key) {
+    if (LANG !== 'en') return scenario[key];
+    const override = TEST_SCENARIO_EN[scenario.id];
+    if (!override || !override[key]) return scenario[key];
+    return override[key];
+  }
 
   const MATERIAL = {
     P: 150,
@@ -21,7 +271,7 @@
     H: 380,
     S: 450,
     T: 500,
-    O: 750
+    B: 750
   };
 
   const ALL_DIRS = [
@@ -52,8 +302,8 @@
     },
     {
       id: 'move_waechter_back_diagonal',
-      name: 'Bewegung: Waechter rueckwaerts-diagonal',
-      description: 'Waechter nutzt die erlaubte diagonal-rueckwaerts Bewegung.',
+      name: 'Bewegung: Wächter rückwärts-diagonal',
+      description: 'Wächter nutzt die erlaubte diagonal-rückwärts Bewegung.',
       setup: {
         activePlayer: WHITE,
         pieces: [
@@ -72,8 +322,8 @@
     },
     {
       id: 'move_klinge_forward_diagonal',
-      name: 'Bewegung: Klinge diagonal-vorwaerts',
-      description: 'Klinge zieht diagonal-vorwaerts wie im Regelwerk beschrieben.',
+      name: 'Bewegung: Klinge diagonal-vorwärts',
+      description: 'Klinge zieht diagonal-vorwärts wie im Regelwerk beschrieben.',
       setup: {
         activePlayer: WHITE,
         pieces: [
@@ -92,8 +342,8 @@
     },
     {
       id: 'move_springer_jump',
-      name: 'Bewegung: Springer springt ueber Figur',
-      description: 'Springer ueberspringt belegte Felder und landet legal im L-Sprung.',
+      name: 'Bewegung: Springer springt über Figur',
+      description: 'Springer überspringt belegte Felder und landet legal im L-Sprung.',
       setup: {
         activePlayer: WHITE,
         pieces: [
@@ -131,9 +381,9 @@
       ]
     },
     {
-      id: 'move_tuemmler_side_glide',
-      name: 'Bewegung: Tuemmler seitwaerts',
-      description: 'Tuemmler kann seitwaerts beliebig weit gleiten.',
+      id: 'move_plaenkler_side_glide',
+      name: 'Bewegung: Plänkler seitwärts',
+      description: 'Plänkler kann seitwärts beliebig weit gleiten.',
       setup: {
         activePlayer: WHITE,
         pieces: [
@@ -150,13 +400,13 @@
       ]
     },
     {
-      id: 'move_orca_diagonal',
-      name: 'Bewegung: Orca diagonal 1 Feld',
-      description: 'Orca kann 1 Feld diagonal ziehen.',
+      id: 'move_brecher_diagonal',
+      name: 'Bewegung: Brecher diagonal 1 Feld',
+      description: 'Brecher kann 1 Feld diagonal ziehen.',
       setup: {
         activePlayer: WHITE,
         pieces: [
-          { square: 'c3', player: WHITE, type: 'O' },
+          { square: 'c3', player: WHITE, type: 'B' },
           { square: 'c4', player: WHITE, type: 'H' },
           { square: 'e5', player: BLACK, type: 'H' },
           { square: 'f5', player: BLACK, type: 'W' }
@@ -164,7 +414,7 @@
       },
       moves: ['c3-d4', 'e5-e4'],
       expected: [
-        { type: 'pieceAt', square: 'd4', player: WHITE, piece: 'O' },
+        { type: 'pieceAt', square: 'd4', player: WHITE, piece: 'B' },
         { type: 'noPieceAt', square: 'c3' }
       ]
     },
@@ -189,13 +439,13 @@
       ]
     },
     {
-      id: 'promotion_orca',
-      name: 'Promotion: Tuemmler -> Orca',
-      description: 'Prueft, dass ein schlagender Tuemmler sofort zu Orca wird.',
+      id: 'promotion_brecher',
+      name: 'Promotion: Plänkler -> Brecher',
+      description: 'Prüft, dass ein schlagender Plänkler sofort zu Brecher wird.',
       setup: { preset: 'default' },
       moves: ['b2-b3', 'b5-b4', 'b3xb4'],
       expected: [
-        { type: 'pieceAt', square: 'b4', player: WHITE, piece: 'O' },
+        { type: 'pieceAt', square: 'b4', player: WHITE, piece: 'B' },
         { type: 'capturedCount', player: BLACK, count: 1 },
         { type: 'activePlayer', player: BLACK }
       ]
@@ -203,7 +453,7 @@
     {
       id: 'isolation_mark_only',
       name: 'Isolation: Markierung ohne Soforttod',
-      description: 'Neu isolierte Figuren werden zuerst nur angezaehlt.',
+      description: 'Neu isolierte Figuren werden zuerst nur angezählt.',
       setup: {
         activePlayer: WHITE,
         pieces: [
@@ -224,8 +474,8 @@
     },
     {
       id: 'isolation_rescue_clears',
-      name: 'Isolation: Rettung hebt Angezaehlt auf',
-      description: 'Angezaehlte Figur ueberlebt bei rechtzeitiger Wiederanbindung.',
+      name: 'Isolation: Rettung hebt Angezählt auf',
+      description: 'Angezählte Figur überlebt bei rechtzeitiger Wiederanbindung.',
       setup: {
         activePlayer: WHITE,
         pieces: [
@@ -245,8 +495,8 @@
     },
     {
       id: 'isolation_death_unresolved',
-      name: 'Isolation: Ungerettet stirbt naechsten Eigenzug',
-      description: 'Angezaehlte Figur stirbt, wenn die Formation nicht repariert wird.',
+      name: 'Isolation: Ungerettet stirbt nächsten Eigenzug',
+      description: 'Angezählte Figur stirbt, wenn die Formation nicht repariert wird.',
       setup: {
         activePlayer: WHITE,
         pieces: [
@@ -267,7 +517,7 @@
     {
       id: 'last_man_rule',
       name: 'Isolation: Letzter Mann Ausnahme',
-      description: 'Eine einzelne verbleibende Figur wird nicht angezaehlt.',
+      description: 'Eine einzelne verbleibende Figur wird nicht angezählt.',
       setup: {
         activePlayer: WHITE,
         pieces: [
@@ -286,7 +536,7 @@
     {
       id: 'double_isolation_death',
       name: 'Isolation: Doppelter Tod',
-      description: 'Zwei angezaehlte Figuren bleiben isoliert und sterben simultan.',
+      description: 'Zwei angezählte Figuren bleiben isoliert und sterben simultan.',
       setup: {
         activePlayer: WHITE,
         pieces: [
@@ -326,7 +576,7 @@
     {
       id: 'fifty_move_rule_threshold',
       name: 'Remis: 50-Zug-Regel Schwelle',
-      description: 'Bei movesWithoutEvent = 99 fuehrt ein ruhiger Zug sofort zum Remis.',
+      description: 'Bei movesWithoutEvent = 99 führt ein ruhiger Zug sofort zum Remis.',
       setup: {
         activePlayer: WHITE,
         movesWithoutEvent: 99,
@@ -386,7 +636,7 @@
         return [[0, fwd], [-1, fwd], [1, fwd], [-1, -fwd], [1, -fwd]];
       case 'S':
         return [[-2, -1], [-2, 1], [-1, -2], [-1, 2], [1, -2], [1, 2], [2, -1], [2, 1]];
-      case 'O':
+      case 'B':
         return [[-1, -1], [-1, 1], [1, -1], [1, 1]];
       default:
         return [];
@@ -396,7 +646,7 @@
   function slideDirections(type) {
     switch (type) {
       case 'T':
-      case 'O':
+      case 'B':
         return [[0, 1], [0, -1], [1, 0], [-1, 0]];
       case 'P':
         return [[1, 0], [-1, 0]];
@@ -626,7 +876,7 @@
       }
 
       if (movingPiece.type === 'P' && captured) {
-        this.board[move.to.file][move.to.rank] = makePiece(player, 'O');
+        this.board[move.to.file][move.to.rank] = makePiece(player, 'B');
         promoted = true;
       }
 
@@ -965,7 +1215,7 @@
       this.app = app;
       this.scenarios = TEST_SCENARIOS.map(scenario => ({ ...scenario, chapter: this._chapterForScenario(scenario) }));
       this.enabled = !!document.getElementById('test-lab');
-      this.chapterOrder = ['§6 Bewegung', '§7 Schlagen', '§8 Isolation', '§9 Verwandlung', '§10 Remis', 'Sonstiges'];
+      this.chapterOrder = ['movement', 'capture', 'isolation', 'promotion', 'draw', 'other'];
       this.state = {
         scenarioId: null,
         initialSetup: null,
@@ -979,12 +1229,12 @@
 
     _chapterForScenario(scenario) {
       const id = scenario.id || '';
-      if (id.startsWith('move_')) return '§6 Bewegung';
-      if (id === 'capture_standard') return '§7 Schlagen';
-      if (id.includes('isolation') || id === 'last_man_rule') return '§8 Isolation';
-      if (id.includes('promotion')) return '§9 Verwandlung';
-      if (id.includes('repetition') || id.includes('fifty_move')) return '§10 Remis';
-      return 'Sonstiges';
+      if (id.startsWith('move_')) return 'movement';
+      if (id === 'capture_standard') return 'capture';
+      if (id.includes('isolation') || id === 'last_man_rule') return 'isolation';
+      if (id.includes('promotion')) return 'promotion';
+      if (id.includes('repetition') || id.includes('fifty_move')) return 'draw';
+      return 'other';
     }
 
     init() {
@@ -1026,12 +1276,12 @@
         if (chapterScenarios.length === 0) continue;
 
         const group = document.createElement('optgroup');
-        group.label = chapter;
+        group.label = t(`chapters.${chapter}`);
 
         for (const scenario of chapterScenarios) {
           const option = document.createElement('option');
           option.value = scenario.id;
-          option.textContent = scenario.name;
+          option.textContent = scenarioLabel(scenario, 'name');
           group.appendChild(option);
         }
 
@@ -1041,7 +1291,7 @@
 
     _syncScenarioDescription() {
       const scenario = this._scenarioById(this.els.scenario.value);
-      this.els.desc.textContent = scenario ? scenario.description : '';
+      this.els.desc.textContent = scenario ? scenarioLabel(scenario, 'description') : '';
       this.els.moves.value = scenario ? scenario.moves.join(' ') : '';
     }
 
@@ -1186,7 +1436,7 @@
       const token = this.state.moveTokens[this.state.cursor];
       const parsed = this.parseMoveToken(token);
       if (!parsed) {
-        this.state.errors.push(`Ungueltiges Zugformat bei Schritt ${this.state.cursor + 1}: ${token}`);
+        this.state.errors.push(t('ui.invalidMoveFormat', { step: this.state.cursor + 1, token }));
         if (renderAfter) this.render();
         return false;
       }
@@ -1196,8 +1446,8 @@
         .find(move => move.to.file === parsed.to.file && move.to.rank === parsed.to.rank);
 
       if (!legalMove) {
-        const side = this.app.game.activePlayer === WHITE ? 'Weiss' : 'Schwarz';
-        this.state.errors.push(`Illegaler Zug bei Schritt ${this.state.cursor + 1} (${side}): ${token}`);
+        const side = playerLabel(this.app.game.activePlayer);
+        this.state.errors.push(t('ui.illegalMove', { step: this.state.cursor + 1, side, token }));
         if (renderAfter) this.render();
         return false;
       }
@@ -1230,42 +1480,60 @@
           const coord = parseCoord(expected.square);
           const piece = coord ? game.board[coord.file][coord.rank] : null;
           ok = !!piece && piece.player === expected.player && piece.type === expected.piece;
-          message = `Figur auf ${expected.square}: erwartet ${expected.player} ${expected.piece}`;
+          message = t('ui.assertPieceAt', {
+            square: expected.square,
+            player: playerLabel(expected.player),
+            piece: PIECE_NAMES[expected.piece]
+          });
         } else if (expected.type === 'noPieceAt') {
           const coord = parseCoord(expected.square);
           const piece = coord ? game.board[coord.file][coord.rank] : null;
           ok = !piece;
-          message = `Feld ${expected.square}: erwartet leer`;
+          message = t('ui.assertNoPieceAt', { square: expected.square });
         } else if (expected.type === 'endangeredAt') {
           const coord = parseCoord(expected.square);
           const piece = coord ? game.board[coord.file][coord.rank] : null;
           ok = !!piece && piece.endangered === expected.value;
-          message = `Angezaehlt auf ${expected.square}: erwartet ${expected.value}`;
+          message = t('ui.assertEndangered', { square: expected.square, value: expected.value });
         } else if (expected.type === 'notEndangeredAt') {
           const coord = parseCoord(expected.square);
           const piece = coord ? game.board[coord.file][coord.rank] : null;
           ok = !!piece && piece.endangered === false;
-          message = `Angezaehlt auf ${expected.square}: erwartet false`;
+          message = t('ui.assertNotEndangered', { square: expected.square });
         } else if (expected.type === 'capturedCount') {
           const count = expected.player === WHITE ? game.capturedWhite.length : game.capturedBlack.length;
           ok = count === expected.count;
-          message = `Verluste ${expected.player}: erwartet ${expected.count}, ist ${count}`;
+          message = t('ui.assertCapturedCount', {
+            player: playerLabel(expected.player),
+            expected: expected.count,
+            actual: count
+          });
         } else if (expected.type === 'activePlayer') {
           ok = game.activePlayer === expected.player;
-          message = `Aktiver Spieler: erwartet ${expected.player}, ist ${game.activePlayer}`;
+          message = t('ui.assertActivePlayer', {
+            expected: playerLabel(expected.player),
+            actual: playerLabel(game.activePlayer)
+          });
         } else if (expected.type === 'gameOver') {
           ok = game.gameOver === expected.value;
-          message = `GameOver: erwartet ${expected.value}, ist ${game.gameOver}`;
+          message = t('ui.assertGameOver', { expected: expected.value, actual: game.gameOver });
         } else if (expected.type === 'winner') {
           ok = game.winner === expected.player;
-          message = `Gewinner: erwartet ${expected.player}, ist ${game.winner}`;
+          message = t('ui.assertWinner', {
+            expected: expected.player === 'draw' ? t('ui.overlayDrawTitle') : playerLabel(expected.player),
+            actual: game.winner === 'draw' ? t('ui.overlayDrawTitle') : playerLabel(game.winner)
+          });
         } else if (expected.type === 'pieceCount') {
           const count = game.pieces(expected.player).length;
           ok = count === expected.count;
-          message = `Figurenanzahl ${expected.player}: erwartet ${expected.count}, ist ${count}`;
+          message = t('ui.assertPieceCount', {
+            player: playerLabel(expected.player),
+            expected: expected.count,
+            actual: count
+          });
         } else if (expected.type === 'movesWithoutEvent') {
           ok = game.movesWithoutEvent === expected.value;
-          message = `movesWithoutEvent: erwartet ${expected.value}, ist ${game.movesWithoutEvent}`;
+          message = t('ui.assertMovesWithoutEvent', { expected: expected.value, actual: game.movesWithoutEvent });
         }
 
         results.push({ ok, message });
@@ -1313,7 +1581,7 @@
           const token = tokens[i];
           const parsed = this.parseMoveToken(token);
           if (!parsed) {
-            errors.push(`Ungueltiges Zugformat bei Schritt ${i + 1}: ${token}`);
+            errors.push(t('ui.invalidMoveFormat', { step: i + 1, token }));
             break;
           }
 
@@ -1322,8 +1590,8 @@
             .find(move => move.to.file === parsed.to.file && move.to.rank === parsed.to.rank);
 
           if (!legalMove) {
-            const side = game.activePlayer === WHITE ? 'Weiss' : 'Schwarz';
-            errors.push(`Illegaler Zug bei Schritt ${i + 1} (${side}): ${token}`);
+            const side = playerLabel(game.activePlayer);
+            errors.push(t('ui.illegalMove', { step: i + 1, side, token }));
             break;
           }
 
@@ -1345,13 +1613,13 @@
       if (!statusEl || !assertionsEl) return;
 
       if (!this.isTestMode()) {
-        statusEl.textContent = 'Testmodus inaktiv';
+        statusEl.textContent = t('ui.testInactive');
         assertionsEl.innerHTML = '';
         if (this.els.summary) this.els.summary.innerHTML = '';
         return;
       }
 
-      statusEl.textContent = `Testmodus aktiv | Zug ${this.state.cursor}/${this.state.moveTokens.length}`;
+      statusEl.textContent = t('ui.testModeStatus', { cursor: this.state.cursor, total: this.state.moveTokens.length });
       const lines = [];
 
       for (const error of this.state.errors) {
@@ -1370,10 +1638,10 @@
         }
 
         if (results.length === 0 && this.state.errors.length === 0) {
-          lines.push('<div class="assert-ok">Keine Assertions hinterlegt.</div>');
+          lines.push(`<div class="assert-ok">${t('ui.assertionsNone')}</div>`);
         }
       } else if (this.state.errors.length === 0) {
-        lines.push('<div>Assertions werden am Ende des Szenarios ausgewertet.</div>');
+        lines.push(`<div>${t('ui.assertionsPending')}</div>`);
       }
 
       assertionsEl.innerHTML = lines.join('');
@@ -1385,7 +1653,7 @@
         .filter(result => !!result);
 
       if (finished.length === 0) {
-        this.els.summary.innerHTML = '<div class="summary-hint">Suite noch nicht ausgefuehrt.</div>';
+        this.els.summary.innerHTML = `<div class="summary-hint">${t('ui.suiteNotRun')}</div>`;
         return;
       }
 
@@ -1393,7 +1661,7 @@
       const failedTotal = finished.length - passedTotal;
       const headerCss = failedTotal === 0 ? 'summary-ok' : 'summary-fail';
       const summaryLines = [
-        `<div class="${headerCss}">Suite: ${passedTotal}/${finished.length} PASS | ${failedTotal} FAIL</div>`
+        `<div class="${headerCss}">${t('ui.suiteSummary', { passed: passedTotal, total: finished.length, failed: failedTotal })}</div>`
       ];
 
       for (const chapter of this.chapterOrder) {
@@ -1407,7 +1675,7 @@
         const chapterFail = chapterResults.length - chapterPass;
         const chapterCss = chapterFail === 0 ? 'summary-ok' : 'summary-fail';
         summaryLines.push(
-          `<div class="summary-line"><span>${chapter}</span><span class="${chapterCss}">${chapterPass}/${chapterResults.length} PASS${chapterFail > 0 ? ` | ${chapterFail} FAIL` : ''}</span></div>`
+          `<div class="summary-line"><span>${t(`chapters.${chapter}`)}</span><span class="${chapterCss}">${chapterPass}/${chapterResults.length} PASS${chapterFail > 0 ? ` | ${chapterFail} FAIL` : ''}</span></div>`
         );
       }
 
@@ -1418,6 +1686,7 @@
   class TethariApp {
     constructor() {
       this.game = new TethariGame();
+      this.lang = LANG;
       this.mode = 'play';
       this.aiDepth = 3;
       this.aiThinking = false;
@@ -1439,6 +1708,7 @@
         overlayText: document.getElementById('game-over-text'),
         btnNew: document.getElementById('btn-new'),
         btnNewOverlay: document.getElementById('btn-new-game-over'),
+        btnLang: document.getElementById('btn-lang'),
         difficulty: document.getElementById('difficulty'),
         helpToggle: document.getElementById('help-toggle'),
         helpPanel: document.getElementById('help-panel')
@@ -1449,11 +1719,94 @@
     }
 
     init() {
+      this.localizeStaticUI();
       this._buildCoordinates();
       this._buildBoard();
       this._bindControls();
       this.testLab.init();
       this.newGame();
+    }
+
+    localizeStaticUI() {
+      document.documentElement.lang = this.lang;
+      document.title = this.testLab.enabled ? t('titles.test') : t('titles.game');
+
+      const setText = (selector, value) => {
+        const el = document.querySelector(selector);
+        if (el) el.textContent = value;
+      };
+      const setHtml = (selector, value) => {
+        const el = document.querySelector(selector);
+        if (el) el.innerHTML = value;
+      };
+      const setAttr = (selector, attr, value) => {
+        const el = document.querySelector(selector);
+        if (el) el.setAttribute(attr, value);
+      };
+
+      setText('main .sidebar:first-child .captured-area h3', t('ui.capturedBlack'));
+      setText('main .sidebar:last-child .captured-area h3', t('ui.capturedWhite'));
+      setText('#move-log h3', t('ui.moveLog'));
+      setText('.movement-panel > h3', t('ui.movementPanel'));
+      setText('#btn-new', t('ui.btnNew'));
+      setText('#btn-new-game-over', t('ui.btnNew'));
+      setText('#help-toggle', t('ui.btnRules'));
+      setText('#btn-lang', this.lang === 'de' ? 'EN' : 'DE');
+      setAttr('#btn-lang', 'title', t('ui.btnLangTitle'));
+      setAttr('#difficulty', 'title', t('ui.difficultyTitle'));
+      setText('#difficulty option[value="2"]', t('ui.difficultyLight'));
+      setText('#difficulty option[value="3"]', t('ui.difficultyMedium'));
+      setText('#difficulty option[value="4"]', t('ui.difficultyHard'));
+
+      const cardCodes = ['H', 'W', 'K', 'S', 'T', 'P', 'B'];
+      const moveCards = document.querySelectorAll('.movement-panel .move-card');
+      moveCards.forEach((card, index) => {
+        const code = cardCodes[index];
+        if (!code) return;
+        const name = card.querySelector('.move-name');
+        const desc = card.querySelector('.move-desc');
+        if (name) name.textContent = I18N[this.lang].moveCards[code].name;
+        if (desc) desc.textContent = I18N[this.lang].moveCards[code].desc;
+      });
+      setText('.move-hint', t('ui.moveHint'));
+
+      const helpHeadings = document.querySelectorAll('#help-panel > h3');
+      if (helpHeadings[0]) helpHeadings[0].textContent = t('ui.helpGoalTitle');
+      if (helpHeadings[1]) helpHeadings[1].textContent = t('ui.helpIsolationTitle');
+      if (helpHeadings[2]) helpHeadings[2].innerHTML = t('ui.helpCaptureTitle');
+      if (helpHeadings[3]) helpHeadings[3].textContent = t('ui.helpPiecesTitle');
+      if (helpHeadings[4]) helpHeadings[4].textContent = t('ui.helpDrawTitle');
+
+      const helpParagraphs = document.querySelectorAll('#help-panel > p');
+      if (helpParagraphs[0]) helpParagraphs[0].innerHTML = t('ui.helpGoalText');
+      if (helpParagraphs[1]) helpParagraphs[1].innerHTML = t('ui.helpIsolationText');
+      if (helpParagraphs[2]) helpParagraphs[2].innerHTML = t('ui.helpIsolationException');
+      if (helpParagraphs[3]) helpParagraphs[3].innerHTML = t('ui.helpCaptureText');
+      if (helpParagraphs[4]) helpParagraphs[4].innerHTML = t('ui.helpDrawText');
+
+      const pieceRows = document.querySelectorAll('#help-panel .piece-help .piece-info');
+      pieceRows.forEach((row, index) => {
+        const model = I18N[this.lang].helpPieces[index];
+        if (!model) return;
+        const name = row.querySelector('.name');
+        const desc = row.querySelector('.desc');
+        if (name) name.textContent = model.name;
+        if (desc) desc.textContent = model.desc;
+      });
+
+      setText('#test-lab h3', t('ui.testLabTitle'));
+      setText('#btn-test-load', t('ui.testLoad'));
+      setText('#btn-test-reset', t('ui.testReset'));
+      setText('#test-status', t('ui.testInactive'));
+      setText('#btn-test-prev', t('ui.testPrev'));
+      setText('#btn-test-next', t('ui.testNext'));
+      setText('#btn-test-run', t('ui.testRun'));
+      setText('#btn-test-suite', t('ui.testSuite'));
+      setText('#btn-test-stop', t('ui.testStop'));
+      const testMoves = document.getElementById('test-moves');
+      if (testMoves) testMoves.placeholder = t('ui.testMovesPlaceholder');
+      const scenarioSelect = document.getElementById('test-scenario');
+      if (scenarioSelect) scenarioSelect.title = t('ui.testScenarioTitle');
     }
 
     newGame() {
@@ -1514,6 +1867,18 @@
         });
       }
 
+      if (this.els.btnLang) {
+        this.els.btnLang.addEventListener('click', () => {
+          const next = this.lang === 'de' ? 'en' : 'de';
+          try {
+            localStorage.setItem('tethari_lang', next);
+          } catch (_error) {
+            // Ignore storage write issues.
+          }
+          window.location.reload();
+        });
+      }
+
       this.els.helpToggle.addEventListener('click', () => {
         if (!this.els.helpPanel) return;
         this.els.helpPanel.classList.add('visible');
@@ -1565,7 +1930,7 @@
       if (this.mode !== 'play') return;
 
       this.aiThinking = true;
-      this.els.status.textContent = 'Computer denkt\u2026';
+      this.els.status.textContent = t('ui.statusComputerThinking');
       this.els.status.className = 'thinking';
 
       setTimeout(() => {
@@ -1635,14 +2000,14 @@
 
     showGameOver() {
       if (this.game.winner === 'draw') {
-        this.els.overlayTitle.textContent = 'Remis';
-        this.els.overlayText.textContent = 'Die Partie endet unentschieden.';
+        this.els.overlayTitle.textContent = t('ui.overlayDrawTitle');
+        this.els.overlayText.textContent = t('ui.overlayDrawText');
       } else if (this.game.winner === this.humanPlayer) {
-        this.els.overlayTitle.textContent = 'Sieg!';
-        this.els.overlayText.textContent = 'Du hast alle gegnerischen Figuren eliminiert.';
+        this.els.overlayTitle.textContent = t('ui.overlayWinTitle');
+        this.els.overlayText.textContent = t('ui.overlayWinText');
       } else {
-        this.els.overlayTitle.textContent = 'Niederlage';
-        this.els.overlayText.textContent = 'Der Computer hat deine Formation zerstoert.';
+        this.els.overlayTitle.textContent = t('ui.overlayLossTitle');
+        this.els.overlayText.textContent = t('ui.overlayLossText');
       }
 
       this.els.overlay.classList.add('visible');
@@ -1659,20 +2024,23 @@
       this.els.status.className = '';
 
       if (this.mode === 'test') {
-        this.els.status.textContent = `Testmodus: Zug ${this.testLab.state.cursor}/${this.testLab.state.moveTokens.length}`;
+        this.els.status.textContent = t('ui.testStatusHeader', {
+          cursor: this.testLab.state.cursor,
+          total: this.testLab.state.moveTokens.length
+        });
         return;
       }
 
       if (this.game.gameOver) {
-        if (this.game.winner === 'draw') this.els.status.textContent = 'Remis!';
-        else if (this.game.winner === this.humanPlayer) this.els.status.textContent = 'Du hast gewonnen!';
-        else this.els.status.textContent = 'Computer gewinnt!';
+        if (this.game.winner === 'draw') this.els.status.textContent = t('ui.statusDraw');
+        else if (this.game.winner === this.humanPlayer) this.els.status.textContent = t('ui.statusYouWon');
+        else this.els.status.textContent = t('ui.statusComputerWon');
         return;
       }
 
       this.els.status.textContent = this.game.activePlayer === this.humanPlayer
-        ? 'Dein Zug (Weiss)'
-        : 'Computer denkt\u2026';
+        ? t('ui.statusYourTurn', { player: playerLabel(this.humanPlayer) })
+        : t('ui.statusComputerThinking');
 
       if (this.game.activePlayer === this.aiPlayer) {
         this.els.status.className = 'thinking';
@@ -1715,7 +2083,7 @@
         if (piece.endangered) cssClass += ' endangered';
         pieceEl.className = cssClass;
         pieceEl.innerHTML = `${piece.type}<span class="sub">${PIECE_NAMES[piece.type].substring(0, 3).toUpperCase()}</span>`;
-        pieceEl.title = PIECE_NAMES[piece.type] + (piece.endangered ? ' (angezaehlt!)' : '');
+        pieceEl.title = PIECE_NAMES[piece.type] + (piece.endangered ? t('ui.endangeredSuffix') : '');
         cell.appendChild(pieceEl);
       });
     }
